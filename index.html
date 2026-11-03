@@ -576,7 +576,7 @@
               <button onclick="openAdminCreateLeaveModal()" class="px-3.5 py-2 bg-[#001e50] hover:bg-[#002d78] text-[#ffd100] rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow transition">
                 <i data-lucide="plus-circle" class="w-4 h-4"></i> Zadat událost / výpomoc / volno
               </button>
-              <button onclick="sendSummaryEmail()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow transition">
+              <button onclick="sendSummaryEmail()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow transition">
                 <i data-lucide="mail" class="w-4 h-4"></i> Odeslat docházku
               </button>
             </div>
@@ -1295,7 +1295,6 @@
         banner.classList.add("hidden");
       }
 
-      // Kontrola, zda má kurýr na tento den schválené volno
       const route = currentUser.route;
       const hasLeave = LEAVES.some(l => l.route === route && l.status === "APPROVED" && l.start <= dateStr && l.end >= dateStr && l.type !== "EVENT");
       
@@ -1387,6 +1386,7 @@
       const route = currentUser.route;
       const shift = {
         stops: Number(document.getElementById("inputStops").value) || 0,
+        under2: 0,
         over2: Number(document.getElementById("inputOver2").value) || 0,
         ps: Number(document.getElementById("inputPS").value) || 0,
         echo: Number(document.getElementById("inputEcho").value) || 0,
@@ -1697,7 +1697,6 @@
       if (adminGrid) adminGrid.innerHTML = html;
     }
 
-    // KURÝR: ODESLÁNÍ ŽÁDOSTI O VOLNO S TYPEM (PLACENÉ / NEPLACENÉ)
     async function submitLeaveRequest() {
       const start = document.getElementById("leaveStart").value;
       const end = document.getElementById("leaveEnd").value;
@@ -1718,7 +1717,6 @@
       renderCurrentView();
     }
 
-    // SPRÁVCE: OTEVŘENÍ FORMULÁŘE PRO VÝPOMOC NEBO DOVOLENOU
     function openAdminCreateLeaveModal() {
       rebuildRouteDropdowns();
       document.getElementById("adminEventModal").classList.remove("hidden");
@@ -1758,7 +1756,6 @@
       renderCurrentView();
     }
 
-    // TABULKA SCHVALOVÁNÍ A RUŠENÍ UDÁLOSTÍ PRO ADMINA
     function renderAdminLeaves() {
       const html = LEAVES.map(l => `
         <tr class="hover:bg-slate-50">
@@ -1790,7 +1787,7 @@
       if (l) {
         l.status = "APPROVED";
         await updateLeaveStatusInDb(id, "APPROVED");
-        alert(`Žádost pro trasu ${l.route} byla schválena a zapsána do kalendáře týmu.`);
+        alert(`Žádost pro trasu ${l.route} byla schválená a zapsána do kalendáře týmu.`);
         renderCurrentView();
       }
     }
@@ -1912,6 +1909,7 @@
       lucide.createIcons();
     }
 
+    // OPRAVENO: PŘÍMÉ ČTENÍ Z DATOVÝCH SMĚN KURÝRŮ V OTEVŘENÉM MĚSÍCI
     function renderAdminSummary() {
       const month = document.getElementById("selectedMonth").value;
       const year = document.getElementById("selectedYear").value;
@@ -1982,13 +1980,21 @@
             invoiceBase = calcInvoiceFromData(routeData, route);
           } else {
             isLocked = false;
+            // Čteme přímo z reálných zapsaných směn kurýrů v daném měsíci
             const mShifts = SHIFTS.filter(sh => {
               const d = new Date(sh.date);
               return d.getFullYear() == year && (d.getMonth() + 1) == month && sh.route === route;
             });
             mShifts.forEach(sh => {
-              routeData.stops += sh.stops || 0; routeData.over2 += sh.over2 || 0; routeData.ps += sh.ps || 0; routeData.echo += sh.echo || 0;
-              routeData.p30 += sh.p30 || 0; routeData.p50 += sh.p50 || 0; routeData.p150 += sh.p150 || 0; routeData.p200 += sh.p200 || 0; routeData.pOver += sh.pOver || 0;
+              routeData.stops += sh.stops || 0;
+              routeData.over2 += sh.over2 || 0;
+              routeData.ps += sh.ps || 0;
+              routeData.echo += sh.echo || 0;
+              routeData.p30 += sh.p30 || 0;
+              routeData.p50 += sh.p50 || 0;
+              routeData.p150 += sh.p150 || 0;
+              routeData.p200 += sh.p200 || 0;
+              routeData.pOver += sh.pOver || 0;
               courierPayout += calcCourierShiftPay(sh, route);
             });
             invoiceBase = calcInvoiceFromData(routeData, route);
@@ -2216,7 +2222,6 @@
         document.getElementById("depoP200").value = sum200;
         document.getElementById("depoPOver").value = sumOverP;
         
-        // Automatický výpočet schválených placených volnů pro tento měsíc v uzávěrce
         const mLeavesCount = LEAVES.filter(l => {
           if (l.route !== route || l.status !== "APPROVED" || l.type === "EVENT") return false;
           if (!l.note.includes("[Placené]")) return false;
@@ -2311,79 +2316,6 @@
       SETTLEMENTS[key][route] = sData;
       await syncSettlementToDb(key, route, sData);
       alert(`Uzávěrka pro trasu ${route} byla uložena a uzamčena v databázi!`);
-      renderCurrentView();
-    }
-
-    function sendSummaryEmail() {
-      const month = document.getElementById("selectedMonth").value;
-      const year = document.getElementById("selectedYear").value;
-
-      let summaryText = `Měsíční docházka - ${month}/${year}\n\n`;
-      getActiveRoutes().forEach(route => {
-        const routeLeaves = LEAVES.filter(l => l.route === route && l.status === "APPROVED");
-        const totalDays = routeLeaves.reduce((acc, l) => acc + l.days, 0);
-        summaryText += `Trasa ${route}: celkem schváleno ${totalDays} dní volna.\n`;
-      });
-
-      alert(`Souhrnný přehled byl odeslán na ${ADMIN_CONFIG.email}!\n\nNáhled:\n${summaryText}`);
-    }
-
-    function loadPricingForRoute() {
-      const route = document.getElementById("pricingRouteSelect").value;
-      const c = PRICING_COURIER[route] || DEFAULT_COURIER_PRICE;
-      const inv = PRICING_INVOICE[route] || DEFAULT_INVOICE_PRICE;
-
-      document.getElementById("rateStop").value = c.stop;
-      document.getElementById("rateOver2").value = c.over2;
-      document.getElementById("ratePS").value = c.ps;
-      document.getElementById("rateEcho").value = c.echo;
-      document.getElementById("rateP30").value = c.p30;
-      document.getElementById("rateP50").value = c.p50;
-      document.getElementById("rateP150").value = c.p150;
-      document.getElementById("rateP200").value = c.p200;
-      document.getElementById("ratePOver").value = c.pOver;
-
-      document.getElementById("invStop").value = inv.stop;
-      document.getElementById("invUnder2").value = inv.under2;
-      document.getElementById("invOver2").value = inv.over2;
-      document.getElementById("invPS").value = inv.ps;
-      document.getElementById("invEcho").value = inv.echo;
-      document.getElementById("invP30").value = inv.p30;
-      document.getElementById("invP50").value = inv.p50;
-      document.getElementById("invP150").value = inv.p150;
-      document.getElementById("invP200").value = inv.p200;
-      document.getElementById("invPOver").value = inv.pOver;
-    }
-
-    async function savePricingForRoute() {
-      const route = document.getElementById("pricingRouteSelect").value;
-      PRICING_COURIER[route] = {
-        stop: Number(document.getElementById("rateStop").value) || 15.0,
-        over2: Number(document.getElementById("rateOver2").value) || 1.0,
-        ps: Number(document.getElementById("ratePS").value) || 3.0,
-        echo: Number(document.getElementById("rateEcho").value) || 2.0,
-        p30: Number(document.getElementById("rateP30").value) || 2.0,
-        p50: Number(document.getElementById("rateP50").value) || 1.5,
-        p150: Number(document.getElementById("rateP150").value) || 1.0,
-        p200: Number(document.getElementById("rateP200").value) || 1.0,
-        pOver: Number(document.getElementById("ratePOver").value) || 1.0
-      };
-
-      PRICING_INVOICE[route] = {
-        stop: Number(document.getElementById("invStop").value) || 38.0,
-        under2: Number(document.getElementById("invUnder2").value) || 8.0,
-        over2: Number(document.getElementById("invOver2").value) || 12.0,
-        ps: Number(document.getElementById("invPS").value) || 14.0,
-        echo: Number(document.getElementById("invEcho").value) || 5.0,
-        p30: Number(document.getElementById("invP30").value) || 3.5,
-        p50: Number(document.getElementById("invP50").value) || 2.8,
-        p150: Number(document.getElementById("invP150").value) || 2.2,
-        p200: Number(document.getElementById("invP200").value) || 2.0,
-        pOver: Number(document.getElementById("invPOver").value) || 1.8
-      };
-
-      await syncPricingToDb();
-      alert(`Sazby pro trasu ${route} byly uloženy do databáze!`);
       renderCurrentView();
     }
 
