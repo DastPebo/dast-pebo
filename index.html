@@ -333,8 +333,8 @@
     <div id="sharedCalendar" class="tab-content">
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-          <h3 class="text-lg font-black text-[#001e50] uppercase mb-1">Přehled plánovaných absencí</h3>
-          <p class="text-xs text-slate-500 mb-4">Vidíte, které trasy mají nahlášené nebo schválené volno</p>
+          <h3 class="text-lg font-black text-[#001e50] uppercase mb-1">Přehled plánovaných absencí a výpomocí</h3>
+          <p class="text-xs text-slate-500 mb-4">Sdílený přehled pro celý tým</p>
           <div id="calendarGrid" class="grid grid-cols-7 gap-1.5 text-center text-xs"></div>
         </div>
 
@@ -350,7 +350,7 @@
           </div>
           <div>
             <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Důvod / Poznámka:</label>
-            <textarea id="leaveNote" rows="2" placeholder="Např. Lékař, soukromé..." class="w-full px-3 py-2 bg-slate-50 border rounded-lg text-xs"></textarea>
+            <textarea id="leaveNote" rows="2" placeholder="Např. Lékař, dovolená, soukromé..." class="w-full px-3 py-2 bg-slate-50 border rounded-lg text-xs"></textarea>
           </div>
           <button onclick="submitLeaveRequest()" class="w-full py-2.5 bg-[#001e50] hover:bg-[#002d78] text-[#ffd100] font-black uppercase text-xs rounded-xl shadow transition">
             Odeslat žádost
@@ -556,7 +556,7 @@
       </div>
     </div>
 
-    <!-- SPRÁVCE: 3. Docházka & Kalendář -->
+    <!-- SPRÁVCE: 3. DOCHÁZKA, KALENDÁŘ & ZADÁVÁNÍ VÝPOMOCÍ SPRÁVCEM -->
     <div id="adminLeaves" class="tab-content">
       <div class="space-y-6 max-w-5xl mx-auto">
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
@@ -564,13 +564,18 @@
             <div>
               <h3 class="text-lg font-black text-[#001e50] uppercase flex items-center gap-2">
                 <i data-lucide="calendar" class="w-5 h-5 text-blue-600"></i>
-                Vizuální kalendář absencí
+                Vizuální kalendář absencí a výpomocí
               </h3>
-              <p class="text-xs text-slate-500">Měsíční přehled přítomnosti a schválených absencí všech tras</p>
+              <p class="text-xs text-slate-500">Měsíční přehled pro celý tým. Schválená volna i výpomoci vidí všichni.</p>
             </div>
-            <button onclick="sendSummaryEmail()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow transition">
-              <i data-lucide="mail" class="w-4 h-4"></i> Odeslat docházku na e-mail
-            </button>
+            <div class="flex flex-wrap items-center gap-2">
+              <button onclick="openAdminCreateLeaveModal()" class="px-3.5 py-2 bg-[#001e50] hover:bg-[#002d78] text-[#ffd100] rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow transition">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i> Zadat událost / výpomoc / volno
+              </button>
+              <button onclick="sendSummaryEmail()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow transition">
+                <i data-lucide="mail" class="w-4 h-4"></i> Odeslat docházku
+              </button>
+            </div>
           </div>
 
           <!-- MŘÍŽKA KALENDÁŘE PRO SPRÁVCE -->
@@ -580,19 +585,20 @@
               <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-emerald-500 inline-block"></span> Všechny trasy k dispozici</span>
               <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-amber-400 inline-block"></span> 1 trasa volno</span>
               <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-rose-500 inline-block"></span> 2+ trasy volno</span>
+              <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-blue-600 inline-block"></span> Výpomoc / Akce</span>
             </div>
           </div>
 
           <div>
-            <h4 class="text-xs font-black uppercase text-slate-600 mb-3 tracking-wider">Seznam žádostí o volno a schvalování</h4>
+            <h4 class="text-xs font-black uppercase text-slate-600 mb-3 tracking-wider">Seznam nahlášených absencí a výpomocí</h4>
             <div class="overflow-x-auto">
               <table class="w-full text-left text-xs">
                 <thead class="bg-slate-50 text-slate-500 font-bold uppercase border-b">
                   <tr>
-                    <th class="py-2.5 px-3">Trasa</th>
+                    <th class="py-2.5 px-3">Typ / Trasa</th>
                     <th class="py-2.5 px-3">Termín</th>
                     <th class="py-2.5 px-3">Dní</th>
-                    <th class="py-2.5 px-3">Důvod</th>
+                    <th class="py-2.5 px-3">Popis / Důvod</th>
                     <th class="py-2.5 px-3">Stav</th>
                     <th class="py-2.5 px-3 text-right">Akce</th>
                   </tr>
@@ -772,6 +778,58 @@
 
   </div>
 
+  <!-- DIALOG PRO ZADÁNÍ UDÁLOSTI / VÝPOMOCI / DOVOLENÉ ADMINEM -->
+  <div id="adminEventModal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border border-slate-200 space-y-4">
+      <div class="flex items-center justify-between border-b pb-3">
+        <h3 class="text-base font-black text-[#001e50] uppercase">Nová událost / výpomoc / dovolená</h3>
+        <button onclick="closeAdminCreateLeaveModal()" class="text-slate-400 hover:text-slate-700">✕</button>
+      </div>
+
+      <div class="space-y-3 text-xs font-bold text-slate-700">
+        <div>
+          <label class="block uppercase mb-1">Typ události:</label>
+          <select id="admEventType" class="w-full px-3 py-2 bg-slate-50 border rounded-lg outline-none font-bold">
+            <option value="EVENT">Výpomoc / Interní událost</option>
+            <option value="LEAVE">Dovolená / Schválené volno</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block uppercase mb-1">Pro koho (Trasa):</label>
+          <select id="admEventRoute" class="w-full px-3 py-2 bg-slate-50 border rounded-lg outline-none font-bold">
+            <!-- Dynamicky generováno -->
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block uppercase mb-1">Datum od:</label>
+            <input type="date" id="admEventStart" class="w-full px-3 py-2 bg-slate-50 border rounded-lg outline-none font-bold">
+          </div>
+          <div>
+            <label class="block uppercase mb-1">Datum do:</label>
+            <input type="date" id="admEventEnd" class="w-full px-3 py-2 bg-slate-50 border rounded-lg outline-none font-bold">
+          </div>
+        </div>
+
+        <div>
+          <label class="block uppercase mb-1">Popis / Důvod (např. Výpomoc svozy Ostrava, Servis dodávky...):</label>
+          <input type="text" id="admEventNote" placeholder="Důvod nebo název výpomoci" class="w-full px-3 py-2 bg-slate-50 border rounded-lg outline-none font-normal">
+        </div>
+      </div>
+
+      <div class="flex gap-2 pt-2 border-t">
+        <button onclick="saveAdminCreatedLeave()" class="flex-1 py-2.5 bg-[#001e50] hover:bg-[#002d78] text-[#ffd100] font-black uppercase tracking-wider rounded-xl shadow transition text-xs">
+          Uložit do kalendáře týmu
+        </button>
+        <button onclick="closeAdminCreateLeaveModal()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs">
+          Zrušit
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- JÁDRO APLIKACE A CLOUDOVÁ SYNCHRONIZACE -->
   <script>
     const SUPABASE_URL = "https://tlfpcosovazdqvxpvsfo.supabase.co";
@@ -856,6 +914,10 @@
       if (leaveStart) leaveStart.value = today;
       const leaveEnd = document.getElementById("leaveEnd");
       if (leaveEnd) leaveEnd.value = today;
+      const admStart = document.getElementById("admEventStart");
+      if (admStart) admStart.value = today;
+      const admEnd = document.getElementById("admEventEnd");
+      if (admEnd) admEnd.value = today;
     }
 
     async function initSupabaseData() {
@@ -924,7 +986,7 @@
           });
         }
 
-        const { data: lData } = await supabaseClient.from('leaves').select('*');
+        const { data: lData } = await supabaseClient.from('leaves').select('*').order('start_date', { ascending: false });
         if (lData) {
           LEAVES = lData.map(l => ({
             id: l.id,
@@ -1053,9 +1115,17 @@
         });
         priceSelect.innerHTML = priceHtml;
       }
+
+      const eventRouteSelect = document.getElementById("admEventRoute");
+      if (eventRouteSelect) {
+        let evHtml = `<option value="ALL">Všichni / Celý tým</option>`;
+        ROUTES_CONFIG.filter(r => r.active).forEach(r => {
+          evHtml += `<option value="${r.route}">Trasa ${r.route} (${r.name})</option>`;
+        });
+        eventRouteSelect.innerHTML = evHtml;
+      }
     }
 
-    // PŘIHLÁŠENÍ S PODPOROU TEXTU
     function handleLogin() {
       const usernameInput = document.getElementById("loginUsername").value.trim().toLowerCase();
       const pass = document.getElementById("loginPassword").value;
@@ -1471,7 +1541,7 @@
       `).join("");
     }
 
-    // KURÝRSKÝ KALENDÁŘ
+    // KURÝRSKÝ KALENDÁŘ (ZOBRAZUJE VOLNA I VÝPOMOCI VŠECH)
     function renderCalendar() {
       const monthVal = document.getElementById("selectedMonth").value;
       const year = Number(document.getElementById("selectedYear").value);
@@ -1486,15 +1556,19 @@
 
       for (let day = 1; day <= daysInMonth; day++) {
         const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-        const activeLeaves = LEAVES.filter(l => l.start <= dateStr && l.end >= dateStr && l.status === "APPROVED");
+        const activeLeaves = LEAVES.filter(l => l.start <= dateStr && l.end >= dateStr && l.status === "APPROVED" && l.type !== "EVENT");
+        const activeEvents = LEAVES.filter(l => l.start <= dateStr && l.end >= dateStr && l.status === "APPROVED" && l.type === "EVENT");
         const holidayName = CZECH_HOLIDAYS[dateStr];
 
         let badges = "";
         if (holidayName) {
-          badges += `<div class="mt-1 bg-amber-100 text-amber-900 text-[10px] font-bold rounded px-1 py-0.5 truncate border border-amber-300">Svátek</div>`;
+          badges += `<div class="mt-1 bg-amber-100 text-amber-900 text-[10px] font-bold rounded px-1 py-0.5 truncate border border-amber-300">Svátek: ${holidayName}</div>`;
         }
         if (activeLeaves.length > 0) {
-          badges += `<div class="mt-1 bg-rose-100 text-rose-800 text-[10px] font-bold rounded px-1 py-0.5">Volno: ${activeLeaves.map(l=>l.route).join(",")}</div>`;
+          badges += activeLeaves.map(l => `<div class="mt-1 bg-rose-100 text-rose-800 text-[10px] font-bold rounded px-1 py-0.5 truncate">Trasa ${l.route} (Volno)</div>`).join("");
+        }
+        if (activeEvents.length > 0) {
+          badges += activeEvents.map(e => `<div class="mt-1 bg-blue-100 text-blue-900 text-[10px] font-bold rounded px-1 py-0.5 truncate border border-blue-200">${e.route === 'ALL' ? 'Akce: ' : 'Výpomoc '+e.route+': '} ${e.note || ''}</div>`).join("");
         }
 
         html += `
@@ -1508,7 +1582,7 @@
       if (grid) grid.innerHTML = html;
     }
 
-    // KALENDÁŘ PRO ADMINISTRÁTORA
+    // ADMINISTRÁTORSKÝ KALENDÁŘ (ZOBRAZUJE VOLNA, ČEKAJÍCÍ ŽÁDOSTI I VÝPOMOCI)
     function renderAdminCalendar() {
       const monthVal = document.getElementById("selectedMonth").value;
       const year = Number(document.getElementById("selectedYear").value);
@@ -1523,7 +1597,8 @@
 
       for (let day = 1; day <= daysInMonth; day++) {
         const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
-        const activeLeaves = LEAVES.filter(l => l.start <= dateStr && l.end >= dateStr && l.status === "APPROVED");
+        const activeLeaves = LEAVES.filter(l => l.start <= dateStr && l.end >= dateStr && l.status === "APPROVED" && l.type !== "EVENT");
+        const activeEvents = LEAVES.filter(l => l.start <= dateStr && l.end >= dateStr && l.status === "APPROVED" && l.type === "EVENT");
         const pendingLeaves = LEAVES.filter(l => l.start <= dateStr && l.end >= dateStr && l.status === "PENDING");
         const holidayName = CZECH_HOLIDAYS[dateStr];
         
@@ -1550,6 +1625,12 @@
           </div>
         `).join("");
 
+        badges += activeEvents.map(e => `
+          <div class="mt-1 bg-blue-100 text-blue-900 text-[10px] font-bold rounded px-1.5 py-0.5 truncate border border-blue-200" title="${e.note || ''}">
+            ${e.route === 'ALL' ? 'Akce: ' : 'Výpomoc '+e.route+': '} ${e.note || ''}
+          </div>
+        `).join("");
+
         if (pendingLeaves.length > 0) {
           badges += pendingLeaves.map(l => `
             <div class="mt-1 bg-amber-100 text-amber-900 text-[10px] font-bold rounded px-1.5 py-0.5 truncate border border-amber-300" title="Čeká na schválení: Trasa ${l.route}">
@@ -1572,6 +1653,7 @@
       if (adminGrid) adminGrid.innerHTML = html;
     }
 
+    // KURÝR: ODESLÁNÍ ŽÁDOSTI O VOLNO
     async function submitLeaveRequest() {
       const start = document.getElementById("leaveStart").value;
       const end = document.getElementById("leaveEnd").value;
@@ -1582,12 +1664,86 @@
       if (days <= 0) return alert("Datum do musí být po datu od!");
 
       const leaveObj = { type: "LEAVE", route: currentUser.route, start, end, days, note, status: "PENDING" };
-      LEAVES.push(leaveObj);
       await syncLeave(leaveObj);
+      LEAVES.unshift(leaveObj);
 
-      alert(`Žádost o volno na ${days} dní byla uložena do systému.`);
+      alert(`Žádost o volno na ${days} dní byla odeslána správci ke schválení.`);
       document.getElementById("leaveNote").value = "";
       renderCurrentView();
+    }
+
+    // SPRÁVCE: OTEVŘENÍ FORMULÁŘE PRO VÝPOMOC NEBO DOVOLENOU
+    function openAdminCreateLeaveModal() {
+      rebuildRouteDropdowns();
+      document.getElementById("adminEventModal").classList.remove("hidden");
+    }
+
+    function closeAdminCreateLeaveModal() {
+      document.getElementById("adminEventModal").classList.add("hidden");
+    }
+
+    async function saveAdminCreatedLeave() {
+      const type = document.getElementById("admEventType").value;
+      const route = document.getElementById("admEventRoute").value;
+      const start = document.getElementById("admEventStart").value;
+      const end = document.getElementById("admEventEnd").value;
+      const note = document.getElementById("admEventNote").value.trim();
+
+      if (!start || !end) return alert("Zadejte datum od i do!");
+      const days = Math.round((new Date(end) - new Date(start)) / (1000*60*60*24)) + 1;
+      if (days <= 0) return alert("Datum do musí být stejné nebo po datu od!");
+
+      const eventObj = {
+        type: type,
+        route: route,
+        start: start,
+        end: end,
+        days: days,
+        note: note || (type === 'EVENT' ? 'Výpomoc' : 'Dovolená'),
+        status: "APPROVED" // Správce zadává rovnou jako schválené
+      };
+
+      await syncLeave(eventObj);
+      LEAVES.unshift(eventObj);
+
+      alert("Záznam byl uložen do kalendáře a okamžitě se zobrazuje celému týmu!");
+      closeAdminCreateLeaveModal();
+      document.getElementById("admEventNote").value = "";
+      renderCurrentView();
+    }
+
+    // TABULKA SCHVALOVÁNÍ PRO ADMINA
+    function renderAdminLeaves() {
+      const html = LEAVES.map(l => `
+        <tr class="hover:bg-slate-50">
+          <td class="py-2.5 px-3 font-bold whitespace-nowrap">${l.type === 'EVENT' ? '📌 Výpomoc ('+l.route+')' : 'Trasa '+l.route}</td>
+          <td class="py-2.5 px-3 whitespace-nowrap">${formatDateCz(l.start)} ${l.start !== l.end ? '- '+formatDateCz(l.end) : ''}</td>
+          <td class="py-2.5 px-3 font-bold whitespace-nowrap">${l.days}</td>
+          <td class="py-2.5 px-3 text-slate-600 font-bold whitespace-nowrap">${l.note || '-'}</td>
+          <td class="py-2.5 px-3 whitespace-nowrap">
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${l.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+              ${l.status === 'APPROVED' ? 'Schváleno' : 'Čeká'}
+            </span>
+          </td>
+          <td class="py-2.5 px-3 text-right whitespace-nowrap">
+            ${l.status === 'PENDING' ? `
+              <button onclick="approveLeave(${l.id})" class="px-2.5 py-1 bg-emerald-600 text-white rounded font-bold text-[10px] hover:bg-emerald-700 shadow-sm">Schválit</button>
+            ` : `<span class="text-slate-400 text-[10px]">Aktivní</span>`}
+          </td>
+        </tr>
+      `).join("");
+      const tableBody = document.getElementById("adminLeavesTable");
+      if (tableBody) tableBody.innerHTML = html || `<tr><td colspan="6" class="py-4 text-center text-slate-400 font-bold">Žádné nahlášené žádosti.</td></tr>`;
+    }
+
+    async function approveLeave(id) {
+      const l = LEAVES.find(x => x.id === id);
+      if (l) {
+        l.status = "APPROVED";
+        await updateLeaveStatusInDb(id, "APPROVED");
+        alert(`Žádost pro trasu ${l.route} byla schválena a zapsána do kalendáře týmu.`);
+        renderCurrentView();
+      }
     }
 
     function renderCourierSettlement() {
@@ -2060,39 +2216,6 @@
       await syncSettlementToDb(key, route, sData);
       alert(`Uzávěrka pro trasu ${route} byla uložena a uzamčena v databázi!`);
       renderCurrentView();
-    }
-
-    function renderAdminLeaves() {
-      const html = LEAVES.map(l => `
-        <tr class="hover:bg-slate-50">
-          <td class="py-2.5 px-3 font-bold whitespace-nowrap">Trasa ${l.route}</td>
-          <td class="py-2.5 px-3 whitespace-nowrap">${formatDateCz(l.start)} ${l.start !== l.end ? '- '+formatDateCz(l.end) : ''}</td>
-          <td class="py-2.5 px-3 font-bold whitespace-nowrap">${l.days}</td>
-          <td class="py-2.5 px-3 text-slate-600 font-bold whitespace-nowrap">${l.note || '-'}</td>
-          <td class="py-2.5 px-3 whitespace-nowrap">
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${l.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
-              ${l.status === 'APPROVED' ? 'Schváleno' : 'Čeká'}
-            </span>
-          </td>
-          <td class="py-2.5 px-3 text-right whitespace-nowrap">
-            ${l.status === 'PENDING' ? `
-              <button onclick="approveLeave(${l.id})" class="px-2 py-1 bg-emerald-600 text-white rounded font-bold text-[10px] hover:bg-emerald-700">Schválit</button>
-            ` : `<span class="text-slate-400 text-[10px]">Vyřízeno</span>`}
-          </td>
-        </tr>
-      `).join("");
-      const tableBody = document.getElementById("adminLeavesTable");
-      if (tableBody) tableBody.innerHTML = html || `<tr><td colspan="6" class="py-4 text-center text-slate-400">Žádné žádosti o volno.</td></tr>`;
-    }
-
-    async function approveLeave(id) {
-      const l = LEAVES.find(x => x.id === id);
-      if (l) {
-        l.status = "APPROVED";
-        await updateLeaveStatusInDb(id, "APPROVED");
-        alert(`Žádost pro trasu ${l.route} byla schválena a zapsána do kalendáře.`);
-        renderCurrentView();
-      }
     }
 
     function sendSummaryEmail() {
