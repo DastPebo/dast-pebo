@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DAST-PEBO S.R.O. - Systém tras a mezd</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    th, td { white-space: nowrap; }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col">
+
+  <!-- HORNÍ LIŠTA -->
+  <header class="bg-[#001e50] text-white shadow-lg border-b-4 border-[#ffd100]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-[#ffd100] flex items-center justify-center text-[#001e50] shadow-md font-black text-xl">
+          DP
+        </div>
+        <div>
+          <h1 class="text-xl font-black tracking-wider text-white uppercase">DAST-PEBO S.R.O.</h1>
+        </div>
+      </div>
+
+      <!-- Uživatelský profil, přepínač pohledu a odhlášení -->
+      <div id="userHeaderInfo" class="hidden items-center gap-3 flex-wrap">
+        <div id="adminViewSwitcher" class="hidden items-center gap-2 bg-slate-800/90 px-3 py-1.5 rounded-xl border border-slate-700 shadow-sm">
+          <span class="text-[11px] text-[#ffd100] font-black uppercase tracking-wider flex items-center gap-1">
+            <i data-lucide="eye" class="w-3.5 h-3.5"></i> Pohled:
+          </span>
+          <select id="switchPerspective" onchange="changePerspective(this.value)" class="bg-[#001e50] text-white text-xs font-bold px-2 py-1 rounded-lg border border-slate-600 outline-none cursor-pointer">
+          </select>
+        </div>
+
+        <div class="text-right">
+          <div id="userRoleBadge" class="text-xs font-bold uppercase tracking-wider text-[#ffd100]"></div>
+          <div id="userNameDisplay" class="text-xs font-semibold text-slate-200"></div>
+        </div>
+
+        <button onclick="logout()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center gap-1.5 transition">
+          <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Odhlásit
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- PŘIHLÁŠENÍ -->
+  <main id="loginScreen" class="flex-1 flex items-center justify-center p-4">
+    <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-200">
+      <div class="text-center mb-6">
+        <h2 class="text-2xl font-black text-[#001e50] uppercase tracking-wide">Přihlášení</h2>
+        <p class="text-xs text-slate-500 mt-1">Zvolte svůj účet nebo trasu</p>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Účet / Trasa</label>
+          <select id="loginRoute" class="w-full pl-3 pr-10 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-800 focus:ring-2 focus:ring-[#001e50] outline-none">
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Heslo</label>
+          <input type="password" id="loginPassword" onkeydown="if(event.key === 'Enter') handleLogin()" placeholder="Zadejte heslo a stiskněte Enter" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-800 focus:ring-2 focus:ring-[#001e50] outline-none text-sm">
+        </div>
+
+        <button onclick="handleLogin()" class="w-full py-3 bg-[#001e50] hover:bg-[#002d78] text-[#ffd100] font-black uppercase tracking-wider rounded-xl shadow-lg transition flex items-center justify-center gap-2 mt-2">
+          <span>Vstoupit do systému</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- HLAVNÍ APLIKACE -->
+  <div id="appContainer" class="hidden flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
+
+    <!-- VOLBA OBDOBÍ -->
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <span class="text-xs font-black uppercase text-slate-500 tracking-wider">Období:</span>
+        <select id="selectedMonth" onchange="renderCurrentView()" class="px-3 py-1.5 bg-slate-100 border border-slate-300 rounded-lg text-sm font-bold text-[#001e50] focus:ring-2 focus:ring-[#001e50] outline-none cursor-pointer">
+          <option value="ALL">★ Celý rok (Souhrn)</option>
+          <option value="1" selected>Leden</option>
+          <option value="2">Únor</option>
+          <option value="3">Březen</option>
+          <option value="4">Duben</option>
+          <option value="5">Květen</option>
+          <option value="6">Červen</option>
+          <option value="7">Červenec</option>
+          <option value="8">Srpen</option>
+          <option value="9">Září</option>
+          <option value="10">Říjen</option>
+          <option value="11">Listopad</option>
+          <option value="12">Prosinec</option>
+        </select>
+        <select id="selectedYear" onchange="renderCurrentView()" class="px-3 py-1.5 bg-slate-100 border border-slate-300 rounded-lg text-sm font-bold text-[#001e50] focus:ring-2 focus:ring-[#001e50] outline-none cursor-pointer">
+          <option value="2026" selected>2026</option>
+          <option value="2027">2027</option>
+        </select>
+      </div>
+
+      <div id="statusBadgeContainer"></div>
+    </div>
+
+    <!-- KURÝRSKÁ NAVIGACE -->
+    <div id="courierNav" class="hidden flex flex-wrap gap-2 border-b border-slate-200 pb-2">
+      <button onclick="switchTab('courierDaily')" class="courier-tab-btn px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 bg-[#001e50] text-[#ffd100]" data-target="courierDaily">
+        <i data-lucide="edit-3" class="w-4 h-4"></i> Zápis směny
+      </button>
+      <button onclick="switchTab('courierSummary')" class="courier-tab-btn px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 bg-white text-slate-700 hover:bg-slate-100" data-target="courierSummary">
+        <i data-lucide="calculator" class="w-4 h-4"></i> Můj měsíc / rok & Odhad
+      </button>
+      <button onclick="switchTab('courierLeaderboard')" class="courier-tab-btn px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 bg-white text-slate-700 hover:bg-slate-100" data-target="courierLeaderboard">
+        <i data-lucide="trophy" class="w-4 h-4"></i> 4 Týmové žebříčky
+      </button>
+      <button onclick="switchTab('sharedCalendar')" class="courier-tab-btn px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 bg-white text-slate-700 hover:bg-slate-100" data-target="sharedCalendar">
+        <i data-lucide="calendar" class="w-4 h-4"></i> Kalendář volna
+      </button>
+      <button onclick="switchTab('courierSettlement')" class="courier-tab-btn px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 bg-white text-slate-700 hover:bg-slate-100" data-target="courierSettlement">
+        <i data-lucide="file-check" class="w-4 h-4"></i> Finální vyúčtování
+      </button>
+    </div>
+
+    <!-- SPRÁVCOVSKÁ NAVIGACE -->
+    <div id="adminNav" class="hidden flex flex-wrap gap-2 border-b border-slate-200 pb-2">
+      <button onclick="switchTab('adminOverview')" class="admin-tab-btn px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 bg-[#001e50] text-[#ffd100]" data-target="adminOverview">
+        <i data-lucide="layout-grid" class="w-4 h-4"></i> Přehled mezd & Fakturace
+      </button>
+      <button onclick="switchTab('adminSettlement')" class="admin-tab-btn px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 bg-white text-slate-700 hover:bg-slate-100" data-target="adminSettlement">
+        <i data-lucide="check-square" class="w-4 h-4"></i> Uzávěrka
+      </button>
+      <button onclick="switchTab('adminLeaves')" class="admin-tab-btn px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 bg-white text-slate-700 hover:bg-slate-100" data-target="adminLeaves">
+        <i data-lucide="calendar-check" class="w-4 h-4"></i> Docházka & Kalendář absencí
+      </button>
+      <button onclick="switchTab('adminCouriers')" class="admin-tab-btn px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 bg-white text-slate-700 hover:bg-slate-100" data-target="adminCouriers">
+        <i data-lucide="users" class="w-4 h-4"></i> Správa tras & Přístupy
+      </button>
+      <button onclick="switchTab('adminPricing')" class="admin-tab-btn px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 bg-white text-slate-700 hover:bg-slate-100" data-target="adminPricing">
+        <i data-lucide="sliders" class="w-4 h-4"></i> Sazby (Kurýři vs Faktura)
+      </button>
+      <button onclick="switchTab('adminBackup')" class="admin-tab-btn px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 bg-white text-slate-700 hover:bg-slate-100" data-target="adminBackup">
+        <i data-lucide="database" class="w-4 h-4"></i> Záloha na Disk
+      </button>
+    </div>
+
+    <!-- KURÝR: 1. Zápis směny -->
+    <div id="courierDaily" class="tab-content">
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 max-w-2xl mx-auto space-y-6">
+        
+        <div id="holidayBanner" class="hidden p-4 bg-amber-50 border-2 border-[#ffd100] rounded-xl space-y-2">
+          <div class="flex items-center gap-2 font-black text-amber-900 text-sm">
+            <i data-lucide="alert-circle" class="w-5 h-5 text-amber-600"></i>
+            <span id="holidayTitle">Dnes je státní svátek!</span>
+          </div>
+          <p class="text-xs text-amber-800">Jel jsi dnes směnu, nebo bylo volno?</p>
+          <div class="flex gap-3 pt-2">
+            <button onclick="confirmHolidayShift(true)" class="px-4 py-1.5 bg-[#001e50] text-[#ffd100] rounded-lg text-xs font-black uppercase">Jel jsem směnu</button>
+            <button onclick="confirmHolidayShift(false)" class="px-4 py-1.5 bg-slate-200 text-slate-700 hover:bg-slate-300 rounded-lg text-xs font-black uppercase">Měl jsem volno (přeskočit)</button>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between border-b pb-3">
+          <div>
+            <h3 class="text-lg font-black text-[#001e50] uppercase">Zápis denního výkonu</h3>
+            <p class="text-xs text-slate-500">Zadejte své výkony za zvolený den</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <label class="text-xs font-bold text-slate-600">Datum:</label>
+            <input type="date" id="entryDate" onchange="checkDateAndLoadShift()" class="px-3 py-1.5 bg-slate-100 border border-slate-300 rounded-lg text-sm font-bold text-slate-800 outline-none">
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Stopky</label>
+              <input type="number" id="inputStops" min="0" placeholder="0" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-800 text-lg focus:ring-2 focus:ring-[#001e50] outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Lehké balíky do 2 kg</label>
+              <input type="number" id="inputUnder2" min="0" placeholder="0" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-800 text-lg focus:ring-2 focus:ring-[#001e50] outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Těžké balíky nad 2 kg</label>
+              <input type="number" id="inputOver2" min="0" placeholder="0" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-800 text-lg focus:ring-2 focus:ring-[#001e50] outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Balíky do ParcelShopu (PS)</label>
+              <input type="number" id="inputPS" min="0" placeholder="0" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-800 text-lg focus:ring-2 focus:ring-[#001e50] outline-none">
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Echopaky</label>
+              <input type="number" id="inputEcho" min="0" placeholder="0" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-800 text-lg focus:ring-2 focus:ring-[#001e50] outline-none">
+            </div>
+          </div>
+
+          <div class="pt-2 border-t">
+            <h4 class="text-xs font-black uppercase text-slate-600 mb-3 tracking-wider">Svozy balíků (kusy na svozu)</h4>
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              <div>
+                <label class="block text-[11px] font-bold text-slate-500 mb-1">Do 30 ks</label>
+                <input type="number" id="inputPickup30" min="0" placeholder="0" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg font-bold text-slate-800 outline-none">
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-500 mb-1">Do 50 ks</label>
+                <input type="number" id="inputPickup50" min="0" placeholder="0" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg font-bold text-slate-800 outline-none">
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-500 mb-1">Do 150 ks</label>
+                <input type="number" id="inputPickup150" min="0" placeholder="0" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg font-bold text-slate-800 outline-none">
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-500 mb-1">Do 200 ks</label>
+                <input type="number" id="inputPickup200" min="0" placeholder="0" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg font-bold text-slate-800 outline-none">
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-500 mb-1">Nad 200 ks</label>
+                <input type="number" id="inputPickupOver" min="0" placeholder="0" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg font-bold text-slate-800 outline-none">
+              </div>
+            </div>
+          </div>
+
+          <div class="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between">
+            <span class="text-xs font-bold text-amber-900 uppercase">Vypočtená odměna za tento den:</span>
+            <span id="calculatedDayReward" class="text-xl font-black text-[#001e50]">0,00 Kč</span>
+          </div>
+
+          <button onclick="saveDailyShift()" id="btnSaveShift" class="w-full py-3.5 bg-[#001e50] hover:bg-[#002d78] text-[#ffd100] font-black uppercase tracking-wider rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+            <i data-lucide="check" class="w-5 h-5"></i>
+            <span>Uložit směnu</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- KURÝR: 2. Můj měsíc / rok & Odhad -->
+    <div id="courierSummary" class="tab-content">
+      <div class="space-y-6">
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+          <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+            <div class="text-xs font-bold uppercase text-slate-500">Odpracované dny</div>
+            <div id="courierWorkDays" class="text-2xl font-black text-[#001e50] mt-1">0</div>
+          </div>
+          <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+            <div class="text-xs font-bold uppercase text-slate-500">Průměrný denní výdělek</div>
+            <div id="courierDailyAvg" class="text-2xl font-black text-emerald-600 mt-1">0 Kč</div>
+          </div>
+          <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+            <div class="text-xs font-bold uppercase text-slate-500">Celkem za období</div>
+            <div id="courierEarnedSoFar" class="text-2xl font-black text-[#001e50] mt-1">0 Kč</div>
+          </div>
+          <div class="bg-white p-5 rounded-2xl shadow-sm border-2 border-[#ffd100] bg-amber-50/50">
+            <div class="text-xs font-bold uppercase text-amber-900">Měsíční cíl / Odhad výplaty</div>
+            <div id="courierProjectedTotal" class="text-2xl font-black text-[#001e50] mt-1">0 Kč</div>
+            <div class="text-[10px] text-slate-500 mt-0.5" id="courierProjectedSubtext">(Průměr × 21 směn)</div>
+          </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <h3 class="text-sm font-black uppercase text-slate-600 mb-4 tracking-wider" id="courierTableTitle">Rozpis směn</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 text-slate-500 font-bold uppercase border-b">
+                <tr>
+                  <th class="py-2.5 px-3">Datum</th>
+                  <th class="py-2.5 px-3">Stopky</th>
+                  <th class="py-2.5 px-3">Balíky (&lt;2 / &gt;2 kg)</th>
+                  <th class="py-2.5 px-3">ParcelShop</th>
+                  <th class="py-2.5 px-3">Echopaky</th>
+                  <th class="py-2.5 px-3">Svozy celkem</th>
+                  <th class="py-2.5 px-3 text-right">Výplata</th>
+                </tr>
+              </thead>
+              <tbody id="courierMonthlyRows" class="divide-y divide-slate-100 font-medium"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KURÝR: 3. 4 Týmové žebříčky -->
+    <div id="courierLeaderboard" class="tab-content">
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
+        <div class="flex flex-wrap items-center justify-between gap-4 border-b pb-4">
+          <div>
+            <h3 class="text-lg font-black text-[#001e50] uppercase">4 Motivační týmové žebříčky</h3>
+            <p class="text-xs text-slate-500">Porovnání výkonů všech tras (pouze fyzické kusy, bez peněz)</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="setLeaderboardPeriod('month')" id="btnLdMonth" class="px-4 py-1.5 rounded-lg text-xs font-black uppercase bg-[#001e50] text-[#ffd100] transition">Tento měsíc</button>
+            <button onclick="setLeaderboardPeriod('year')" id="btnLdYear" class="px-4 py-1.5 rounded-lg text-xs font-black uppercase bg-slate-100 text-slate-700 hover:bg-slate-200 transition">Celý rok</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <h4 class="text-xs font-black uppercase text-slate-700 mb-3 flex items-center gap-2">
+              <i data-lucide="map-pin" class="w-4 h-4 text-blue-600"></i> 1. Počet odjetých stopek
+            </h4>
+            <div id="leaderboardStops" class="space-y-2"></div>
+          </div>
+
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <h4 class="text-xs font-black uppercase text-slate-700 mb-3 flex items-center gap-2">
+              <i data-lucide="package" class="w-4 h-4 text-amber-600"></i> 2. Počet doručených balíků
+            </h4>
+            <div id="leaderboardPackages" class="space-y-2"></div>
+          </div>
+
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <h4 class="text-xs font-black uppercase text-slate-700 mb-3 flex items-center gap-2">
+              <i data-lucide="truck" class="w-4 h-4 text-emerald-600"></i> 3. Počet svezených balíků (svozy)
+            </h4>
+            <div id="leaderboardPickups" class="space-y-2"></div>
+          </div>
+
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <h4 class="text-xs font-black uppercase text-slate-700 mb-3 flex items-center gap-2">
+              <i data-lucide="archive" class="w-4 h-4 text-purple-600"></i> 4. Balíky do PS / Boxů
+            </h4>
+            <div id="leaderboardPS" class="space-y-2"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KURÝR: 4. Kalendář volna -->
+    <div id="sharedCalendar" class="tab-content">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <h3 class="text-lg font-black text-[#001e50] uppercase mb-1">Přehled plánovaných absencí</h3>
+          <p class="text-xs text-slate-500 mb-4">Vidíte, které trasy mají nahlášené nebo schválené volno</p>
+          <div id="calendarGrid" class="grid grid-cols-7 gap-1.5 text-center text-xs"></div>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+          <h3 class="text-sm font-black text-[#001e50] uppercase">Žádost o volno / dovolenou</h3>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Datum od:</label>
+            <input type="date" id="leaveStart" class="w-full px-3 py-2 bg-slate-50 border rounded-lg text-sm font-bold">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Datum do:</label>
+            <input type="date" id="leaveEnd" class="w-full px-3 py-2 bg-slate-50 border rounded-lg text-sm font-bold">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Důvod / Poznámka:</label>
+            <textarea id="leaveNote" rows="2" placeholder="Např. Lékař, soukromé..." class="w-full px-3 py-2 bg-slate-50 border rounded-lg text-xs"></textarea>
+          </div>
+          <button onclick="submitLeaveRequest()" class="w-full py-2.5 bg-[#001e50] hover:bg-[#002d78] text-[#ffd100] font-black uppercase text-xs rounded-xl shadow transition">
+            Odeslat žádost
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- KURÝR: 5. Finální vyúčtování -->
+    <div id="courierSettlement" class="tab-content">
+      <div id="settlementBox" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 max-w-2xl mx-auto"></div>
+    </div>
+
+    <!-- SPRÁVCE: 1. Přehled mezd & Fakturace -->
+    <div id="adminOverview" class="tab-content">
+      <div class="space-y-6">
+        <div class="grid grid-cols-1 sm:grid-cols-5 gap-3">
+          <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+            <div class="text-[11px] font-bold uppercase text-slate-500">Stopek celkem</div>
+            <div id="adminTotalStops" class="text-2xl font-black text-[#001e50] mt-1">0</div>
+          </div>
+          <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+            <div class="text-[11px] font-bold uppercase text-slate-500">Balíků celkem</div>
+            <div id="adminTotalPackages" class="text-2xl font-black text-[#001e50] mt-1">0</div>
+          </div>
+          <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+            <div class="text-[11px] font-bold uppercase text-slate-500">Svezeno celkem</div>
+            <div id="adminTotalPickups" class="text-2xl font-black text-blue-700 mt-1">0 ks</div>
+          </div>
+          <div class="bg-white p-4 rounded-2xl shadow-sm border-2 border-emerald-400 bg-emerald-50/40">
+            <div class="text-[11px] font-bold uppercase text-emerald-900">Faktura (s DPH 21 %)</div>
+            <div id="adminTotalInvoiceVat" class="text-xl font-black text-emerald-700 mt-1">0 Kč</div>
+          </div>
+          <div class="bg-white p-4 rounded-2xl shadow-sm border-2 border-blue-400 bg-blue-50/40">
+            <div class="text-[11px] font-bold uppercase text-blue-900">Výplaty kurýrů</div>
+            <div id="adminTotalPayout" class="text-xl font-black text-[#001e50] mt-1">0 Kč</div>
+            <div class="text-[10px] text-blue-900 font-black" id="adminGrossProfit">Zůstatek: 0 Kč</div>
+          </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div>
+              <h3 class="text-sm font-black uppercase text-slate-700 tracking-wider">Porovnání: Faktura vs. Výplata kurýra</h3>
+            </div>
+            <button onclick="downloadCSVBackup()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold flex items-center gap-1.5 transition">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i> Exportovat CSV
+            </button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 text-slate-500 font-bold uppercase border-b">
+                <tr>
+                  <th class="py-2.5 px-3">Trasa</th>
+                  <th class="py-2.5 px-3">Stopky</th>
+                  <th class="py-2.5 px-3">Balíky (&lt;2 / &gt;2 kg)</th>
+                  <th class="py-2.5 px-3">ParcelShop</th>
+                  <th class="py-2.5 px-3">Svozy</th>
+                  <th class="py-2.5 px-3 text-right bg-blue-50/60 text-[#001e50] font-black">Výplata kurýra</th>
+                  <th class="py-2.5 px-3 text-right text-emerald-800 font-bold bg-emerald-50/60">Faktura (s DPH 21 %)</th>
+                  <th class="py-2.5 px-3 text-right font-black text-slate-900 bg-amber-50/60">Rozdíl</th>
+                  <th class="py-2.5 px-3 text-center">Stav</th>
+                </tr>
+              </thead>
+              <tbody id="adminSummaryRows" class="divide-y divide-slate-100 font-medium"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SPRÁVCE: 2. Uzávěrka -->
+    <div id="adminSettlement" class="tab-content">
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6 max-w-4xl mx-auto">
+        <div class="flex flex-wrap items-center justify-between gap-4 border-b pb-4">
+          <div>
+            <h3 class="text-lg font-black text-[#001e50] uppercase">Uzávěrka</h3>
+          </div>
+          <div class="flex items-center gap-2">
+            <label class="text-xs font-bold text-slate-600">Trasa:</label>
+            <select id="settleRouteSelect" onchange="loadSettlementForEdit()" class="px-3 py-1.5 bg-slate-100 border border-slate-300 rounded-lg text-sm font-bold text-[#001e50]">
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-4">
+            <h4 class="text-xs font-black uppercase text-slate-600 tracking-wider">Výkony uznané depem</h4>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Stopky</label>
+                <input type="number" id="depoStops" oninput="calculateAdminPayout()" class="w-full px-3 py-2 bg-slate-50 border rounded-lg font-bold text-slate-800">
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Lehké balíky do 2 kg</label>
+                <input type="number" id="depoUnder2" readonly class="w-full px-3 py-2 bg-slate-100 border rounded-lg font-bold text-slate-600 cursor-not-allowed">
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Těžké balíky nad 2 kg</label>
+                <input type="number" id="depoOver2" oninput="calculateAdminPayout()" class="w-full px-3 py-2 bg-slate-50 border rounded-lg font-bold text-slate-800">
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Balíky do PS</label>
+                <input type="number" id="depoPS" oninput="calculateAdminPayout()" class="w-full px-3 py-2 bg-slate-50 border rounded-lg font-bold text-slate-800">
+              </div>
+              <div class="col-span-2">
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Echopaky</label>
+                <input type="number" id="depoEcho" oninput="calculateAdminPayout()" class="w-full px-3 py-2 bg-slate-50 border rounded-lg font-bold text-slate-800">
+              </div>
+            </div>
+
+            <div class="pt-2">
+              <label class="block text-[11px] font-bold text-slate-600 mb-1">Svozy balíků (kusy)</label>
+              <div class="grid grid-cols-3 gap-2">
+                <div>
+                  <span class="text-[10px] text-slate-500 block">Do 30 ks</span>
+                  <input type="number" id="depoP30" oninput="calculateAdminPayout()" class="w-full px-2 py-1.5 bg-slate-50 border rounded text-xs font-bold">
+                </div>
+                <div>
+                  <span class="text-[10px] text-slate-500 block">Do 50 ks</span>
+                  <input type="number" id="depoP50" oninput="calculateAdminPayout()" class="w-full px-2 py-1.5 bg-slate-50 border rounded text-xs font-bold">
+                </div>
+                <div>
+                  <span class="text-[10px] text-slate-500 block">Do 150 ks</span>
+                  <input type="number" id="depoP150" oninput="calculateAdminPayout()" class="w-full px-2 py-1.5 bg-slate-50 border rounded text-xs font-bold">
+                </div>
+                <div>
+                  <span class="text-[10px] text-slate-500 block">Do 200 ks</span>
+                  <input type="number" id="depoP200" oninput="calculateAdminPayout()" class="w-full px-2 py-1.5 bg-slate-50 border rounded text-xs font-bold">
+                </div>
+                <div class="col-span-2">
+                  <span class="text-[10px] text-slate-500 block">Nad 200 ks</span>
+                  <input type="number" id="depoPOver" oninput="calculateAdminPayout()" class="w-full px-2 py-1.5 bg-slate-50 border rounded text-xs font-bold">
+                </div>
+              </div>
+            </div>
+
+            <div class="p-3 bg-slate-100 rounded-xl flex justify-between items-center text-xs">
+              <span class="font-bold text-slate-600">Základ za výkon:</span>
+              <span id="depoBaseTotal" class="font-black text-[#001e50]">0,00 Kč</span>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <h4 class="text-xs font-black uppercase text-slate-600 tracking-wider">Dovolená, bonusy a rozpad výplaty</h4>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Dovolená (dní)</label>
+                <input type="number" id="depoLeaveDays" oninput="calculateAdminPayout()" class="w-full px-3 py-2 bg-slate-50 border rounded-lg font-bold text-slate-800">
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Sazba za dovolenou (Kč/den)</label>
+                <input type="number" id="depoLeaveRate" value="1000" oninput="calculateAdminPayout()" class="w-full px-3 py-2 bg-slate-50 border rounded-lg font-bold text-slate-800">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[11px] font-bold text-emerald-700 mb-1">Bonusy celkem (+ Kč)</label>
+                <input type="number" id="depoBonus" placeholder="0" oninput="calculateAdminPayout()" class="w-full px-3 py-2 bg-slate-50 border rounded-lg font-bold text-emerald-700">
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-rose-700 mb-1">Pokuty / Srážky (- Kč)</label>
+                <input type="number" id="depoPenalty" placeholder="0" oninput="calculateAdminPayout()" class="w-full px-3 py-2 bg-slate-50 border rounded-lg font-bold text-rose-700">
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 mb-1">Poznámka k bonusům a pokutám</label>
+              <input type="text" id="depoNotes" placeholder="Např. Doprava 1000, Záskok 300, kouření -4000..." class="w-full px-3 py-2 bg-slate-50 border rounded-lg text-xs">
+            </div>
+
+            <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl flex justify-between items-center text-xs">
+              <span class="font-bold text-amber-950 uppercase">Výplata kurýra celkem:</span>
+              <span id="depoFinalPayout" class="text-lg font-black text-[#001e50]">0,00 Kč</span>
+            </div>
+
+            <div class="pt-2 border-t space-y-2">
+              <span class="text-[11px] font-black uppercase text-slate-500 block">Rozpad plateb:</span>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <span class="text-[10px] text-slate-600 block">Na HPP účet</span>
+                  <input type="number" id="depoPayHPP" oninput="calculatePayoutRest()" class="w-full px-3 py-1.5 bg-slate-50 border rounded text-xs font-bold">
+                </div>
+                <div>
+                  <span class="text-[10px] text-slate-600 block">Na DPP účet</span>
+                  <input type="number" id="depoPayDPP" oninput="calculatePayoutRest()" class="w-full px-3 py-1.5 bg-slate-50 border rounded text-xs font-bold">
+                </div>
+              </div>
+              <div class="p-2 bg-slate-100 rounded-lg flex justify-between items-center text-xs">
+                <span class="font-bold text-slate-600">Zbytek:</span>
+                <span id="depoPayRest" class="font-black text-[#001e50]">0,00 Kč</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex gap-4 pt-4 border-t">
+          <button onclick="saveSettlement()" class="flex-1 py-3 bg-[#001e50] hover:bg-[#002d78] text-[#ffd100] font-black uppercase tracking-wider rounded-xl shadow transition">
+            Uložit a uzamknout uzávěrku pro tuto trasu
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SPRÁVCE: 3. Docházka & Kalendář -->
+    <div id="adminLeaves" class="tab-content">
+      <div class="space-y-6 max-w-5xl mx-auto">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <div class="flex flex-wrap items-center justify-between gap-4 border-b pb-4 mb-4">
+            <div>
+              <h3 class="text-lg font-black text-[#001e50] uppercase flex items-center gap-2">
+                <i data-lucide="calendar" class="w-5 h-5 text-blue-600"></i>
+                Vizuální kalendář absencí
+              </h3>
+              <p class="text-xs text-slate-500">Měsíční přehled přítomnosti kurýrů</p>
+            </div>
+            <button onclick="sendSummaryEmail()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow transition">
+              <i data-lucide="mail" class="w-4 h-4"></i> Odeslat docházku na e-mail
+            </button>
+          </div>
+
+          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6">
+            <div id="adminCalendarGrid" class="grid grid-cols-7 gap-1.5 text-center text-xs"></div>
+            <div class="mt-4 flex flex-wrap items-center gap-5 text-xs font-bold text-slate-700 border-t pt-3">
+              <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-emerald-500 inline-block"></span> Všechny trasy k dispozici</span>
+              <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-amber-400 inline-block"></span> 1 trasa volno</span>
+              <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-rose-500 inline-block"></span> 2+ trasy volno</span>
+            </div>
+          </div>
+
+          <div>
+            <h4 class="text-xs font-black uppercase text-slate-600 mb-3 tracking-wider">Seznam žádostí o volno</h4>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50 text-slate-500 font-bold uppercase border-b">
+                  <tr>
+                    <th class="py-2.5 px-3">Trasa</th>
+                    <th class="py-2.5 px-3">Termín</th>
+                    <th class="py-2.5 px-3">Dní</th>
+                    <th class="py-2.5 px-3">Důvod</th>
+                    <th class="py-2.5 px-3">Stav</th>
+                    <th class="py-2.5 px-3 text-right">Akce</th>
+                  </tr>
+                </thead>
+                <tbody id="adminLeavesTable" class="divide-y divide-slate-100 font-medium"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SPRÁVCE: 4. SPRÁVA TRAS, PŘÍSTUPŮ & ZMĚNA HESLA ADMINA -->
+    <div id="adminCouriers" class="tab-content">
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 max-w-4xl mx-auto space-y-6">
+        
+        <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+          <h4 class="text-xs font-black uppercase text-[#001e50] tracking-wider flex items-center gap-2">
+            <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i>
+            Přístup hlavního administrátora (dastpebo@gmail.com)
+          </h4>
+          <div class="flex flex-wrap items-center gap-3">
+            <div class="flex-1 min-w-[200px]">
+              <label class="block text-[11px] font-bold text-slate-600 mb-1">Nové heslo správce:</label>
+              <input type="text" id="adminNewPassword" placeholder="Zadejte nové heslo správce" class="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs font-mono font-bold outline-none">
+            </div>
+            <div class="pt-5">
+              <button onclick="saveAdminPassword()" class="px-4 py-2 bg-[#001e50] hover:bg-[#002d78] text-[#ffd100] rounded-lg text-xs font-black uppercase tracking-wider transition">
+                Změnit heslo správce
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-4 border-b pb-4">
+          <div>
+            <h3 class="text-lg font-black text-[#001e50] uppercase">Správa tras a hesel kurýrů</h3>
+            <p class="text-xs text-slate-500">Údaje se ukládají ihned po přepsání v buňce</p>
+          </div>
+          <button onclick="addNewRoutePrompt()" class="px-3.5 py-2 bg-[#001e50] hover:bg-[#002d78] text-[#ffd100] rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow transition">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i> Přidat novou trasu
+          </button>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 text-slate-500 font-bold uppercase border-b">
+              <tr>
+                <th class="py-2.5 px-3">Číslo trasy</th>
+                <th class="py-2.5 px-3">Jméno kurýra</th>
+                <th class="py-2.5 px-3">E-mail kurýra</th>
+                <th class="py-2.5 px-3">Heslo pro přihlášení</th>
+                <th class="py-2.5 px-3 text-center">Stav</th>
+                <th class="py-2.5 px-3 text-right">Akce</th>
+              </tr>
+            </thead>
+            <tbody id="courierManagementTable" class="divide-y divide-slate-100 font-medium"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- SPRÁVCE: 5. Ceník pro trasy -->
+    <div id="adminPricing" class="tab-content">
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 max-w-4xl mx-auto space-y-6">
+        <div class="flex flex-wrap items-center justify-between gap-4 border-b pb-4">
+          <div>
+            <h3 class="text-lg font-black text-[#001e50] uppercase">Ceník sazeb dle tras</h3>
+            <p class="text-xs text-slate-500">Rozlišení výpočtu výplaty kurýra vs. GLS fakturace firmy</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <label class="text-xs font-bold text-slate-600">Vyberte trasu:</label>
+            <select id="pricingRouteSelect" onchange="loadPricingForRoute()" class="px-3 py-1.5 bg-slate-100 border border-slate-300 rounded-lg text-sm font-bold text-[#001e50]">
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
+            <h4 class="text-xs font-black uppercase text-[#001e50] tracking-wider border-b pb-2">1. Sazby pro výplatu kurýra (v tabulce kurýra)</h4>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[11px] font-bold text-slate-700 mb-1">Stopka (Kč)</label>
+                <input type="number" id="rateStop" step="0.5" class="w-full px-3 py-1.5 bg-white border rounded text-xs font-bold">
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-700 mb-1">Balík nad 2 kg (Kč)</label>
+                <input type="number" id="rateOver2" step="0.5" class="w-full px-3 py-1.5 bg-white border rounded text-xs font-bold">
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-700 mb-1">ParcelShop (Kč)</label>
+                <input type="number" id="ratePS" step="0.5" class="w-full px-3 py-1.5 bg-white border rounded text-xs font-bold">
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-slate-700 mb-1">Echopaky (Kč)</label>
+                <input type="number" id="rateEcho" step="0.5" class="w-full px-3 py-1.5 bg-white border rounded text-xs font-bold">
+              </div>
+            </div>
+            <div class="pt-2 border-t">
+              <span class="text-[10px] font-bold text-slate-500 block mb-1">Svozy balíků kurýr (Kč/ks)</span>
+              <div class="grid grid-cols-5 gap-1.5">
+                <input type="number" id="rateP30" step="0.1" class="w-full px-1.5 py-1 bg-white border rounded text-[11px] font-bold">
+                <input type="number" id="rateP50" step="0.1" class="w-full px-1.5 py-1 bg-white border rounded text-[11px] font-bold">
+                <input type="number" id="rateP150" step="0.1" class="w-full px-1.5 py-1 bg-white border rounded text-[11px] font-bold">
+                <input type="number" id="rateP200" step="0.1" class="w-full px-1.5 py-1 bg-white border rounded text-[11px] font-bold">
+                <input type="number" id="ratePOver" step="0.1" class="w-full px-1.5 py-1 bg-white border rounded text-[11px] font-bold">
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-4 p-4 bg-emerald-50/50 rounded-xl border border-emerald-200">
+            <h4 class="text-xs font-black uppercase text-emerald-900 tracking-wider border-b border-emerald-200 pb-2">2. Sazby pro fakturaci firmy (tabulka Kompletní)</h4>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[11px] font-bold text-emerald-800 mb-1">Stopka faktura (Kč)</label>
+                <input type="number" id="invStop" step="0.5" class="w-full px-3 py-1.5 bg-white border rounded text-xs font-bold">
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-emerald-800 mb-1">Balík pod 2 kg (Kč)</label>
+                <input type="number" id="invUnder2" step="0.5" class="w-full px-3 py-1.5 bg-white border rounded text-xs font-bold">
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-emerald-800 mb-1">Balík nad 2 kg (Kč)</label>
+                <input type="number" id="invOver2" step="0.5" class="w-full px-3 py-1.5 bg-white border rounded text-xs font-bold">
+              </div>
+              <div>
+                <label class="block text-[11px] font-bold text-emerald-800 mb-1">ParcelShop (Kč)</label>
+                <input type="number" id="invPS" step="0.5" class="w-full px-3 py-1.5 bg-white border rounded text-xs font-bold">
+              </div>
+              <div class="col-span-2">
+                <label class="block text-[11px] font-bold text-emerald-800 mb-1">Echopaky (Kč)</label>
+                <input type="number" id="invEcho" step="0.5" class="w-full px-3 py-1.5 bg-white border rounded text-xs font-bold">
+              </div>
+            </div>
+            <div class="pt-2 border-t border-emerald-200">
+              <span class="text-[10px] font-bold text-emerald-700 block mb-1">Svozy balíků faktura (Kč/ks)</span>
+              <div class="grid grid-cols-5 gap-1.5">
+                <input type="number" id="invP30" step="0.1" class="w-full px-1.5 py-1 bg-white border rounded text-[11px] font-bold">
+                <input type="number" id="invP50" step="0.1" class="w-full px-1.5 py-1 bg-white border rounded text-[11px] font-bold">
+                <input type="number" id="invP150" step="0.1" class="w-full px-1.5 py-1 bg-white border rounded text-[11px] font-bold">
+                <input type="number" id="invP200" step="0.1" class="w-full px-1.5 py-1 bg-white border rounded text-[11px] font-bold">
+                <input type="number" id="invPOver" step="0.1" class="w-full px-1.5 py-1 bg-white border rounded text-[11px] font-bold">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button onclick="savePricingForRoute()" class="w-full py-3 bg-[#001e50] hover:bg-[#002d78] text-[#ffd100] font-black uppercase tracking-wider rounded-xl shadow transition">
+          Uložit obě cenové hladiny pro vybranou trasu
+        </button>
+      </div>
+    </div>
+
+    <!-- SPRÁVCE: 6. Záloha na Disk -->
+    <div id="adminBackup" class="tab-content">
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 max-w-2xl mx-auto space-y-6">
+        <div>
+          <h3 class="text-lg font-black text-[#001e50] uppercase">Záloha na Disk a export</h3>
+          <p class="text-xs text-slate-500">Stáhněte si aktuální data do Google Tabulek nebo záložního souboru</p>
+        </div>
+
+        <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+          <button onclick="downloadCSVBackup()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider rounded-lg shadow transition flex items-center justify-center gap-2">
+            <i data-lucide="download" class="w-4 h-4"></i> Stáhnout data do CSV
+          </button>
+          <button onclick="downloadJSONBackup()" class="w-full py-2.5 bg-[#001e50] hover:bg-[#002d78] text-[#ffd100] font-bold text-xs uppercase tracking-wider rounded-lg shadow transition flex items-center justify-center gap-2">
+            <i data-lucide="download" class="w-4 h-4"></i> Stáhnout kompletní systémovou zálohu (.JSON)
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SUPABASE INTEGRACE & LOGIKA -->
+  <script>
+    const SUPABASE_URL = "https://tlfpcosovazdqvxpvsfo.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_BYP1fNCurF-ZjLY2Gw24Dg_AEnRV4vy";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // Klon databázové synchronizace při startu
+    async function initSupabaseData() {
+      try {
+        // 1. Nastavení administrátora
+        const { data: confData } = await supabaseClient.from('app_config').select('*').eq('key', 'admin_config').single();
+        if (confData && confData.value) {
+          ADMIN_CONFIG = confData.value;
+        }
+
+        // 2. Trasy a kurýři
+        const { data: cData } = await supabaseClient.from('couriers').select('*').order('route');
+        if (cData && cData.length > 0) {
+          ROUTES_CONFIG = cData;
+          rebuildRouteDropdowns();
+        }
+
+        // 3. Denní směny
+        const { data: sData } = await supabaseClient.from('daily_shifts').select('*');
+        if (sData) {
+          SHIFTS = sData.map(s => ({
+            date: s.date,
+            route: s.route,
+            stops: s.stops || 0,
+            under2: s.under2 || 0,
+            over2: s.over2 || 0,
+            ps: s.ps || 0,
+            echo: s.echo || 0,
+            p30: s.p30 || 0,
+            p50: s.p50 || 0,
+            p150: s.p150 || 0,
+            p200: s.p200 || 0,
+            pOver: s.pover || s.pOver || 0
+          }));
+        }
+
+        // 4. Uzávěrky
+        const { data: settsData } = await supabaseClient.from('settlements').select('*');
+        if (settsData) {
+          SETTLEMENTS = {};
+          settsData.forEach(st => {
+            if (!SETTLEMENTS[st.period]) SETTLEMENTS[st.period] = {};
+            SETTLEMENTS[st.period][st.route] = {
+              stops: st.stops,
+              under2: st.under2,
+              over2: st.over2,
+              ps: st.ps,
+              echo: st.echo,
+              p30: st.p30,
+              p50: st.p50,
+              p150: st.p150,
+              p200: st.p200,
+              pOver: st.pover || st.pOver || 0,
+              leaveDays: st.leave_days,
+              leaveRate: st.leave_rate,
+              bonus: st.bonus,
+              penalty: st.penalty,
+              notes: st.notes,
+              payHPP: st.pay_hpp,
+              payDPP: st.pay_dpp,
+              locked: st.locked
+            };
+          });
+        }
+
+        // 5. Žádosti o volno
+        const { data: lData } = await supabaseClient.from('leaves').select('*');
+        if (lData) {
+          LEAVES = lData.map(l => ({
+            id: l.id,
+            type: l.type || 'LEAVE',
+            route: l.route,
+            start: l.start_date,
+            end: l.end_date,
+            days: l.days,
+            note: l.note,
+            status: l.status
+          }));
+        }
+
+        renderCurrentView();
+      } catch (err) {
+        console.error("Chyba při načítání ze Supabase:", err);
+      }
+    }
+
+    // Ukládání na pozadí do cloudu
+    async function syncShiftToDb(shift) {
+      await supabaseClient.from('daily_shifts').upsert({
+        date: shift.date,
+        route: shift.route,
+        stops: shift.stops,
+        under2: shift.under2,
+        over2: shift.over2,
+        ps: shift.ps,
+        echo: shift.echo,
+        p30: shift.p30,
+        p50: shift.p50,
+        p150: shift.p150,
+        p200: shift.p200,
+        pOver: shift.pOver
+      }, { onConflict: 'date,route' });
+    }
+
+    async function syncSettlementToDb(period, route, s) {
+      await supabaseClient.from('settlements').upsert({
+        period: period,
+        route: route,
+        stops: s.stops,
+        under2: s.under2,
+        over2: s.over2,
+        ps: s.ps,
+        echo: s.echo,
+        p30: s.p30,
+        p50: s.p50,
+        p150: s.p150,
+        p200: s.p200,
+        pOver: s.pOver,
+        leave_days: s.leaveDays,
+        leave_rate: s.leaveRate,
+        bonus: s.bonus,
+        penalty: s.penalty,
+        notes: s.notes,
+        pay_hpp: s.payHPP,
+        pay_dpp: s.payDPP,
+        locked: s.locked
+      }, { onConflict: 'period,route' });
+    }
+
+    async function syncCourierConfig(c) {
+      await supabaseClient.from('couriers').upsert({
+        route: c.route,
+        name: c.name,
+        email: c.email,
+        password: c.password,
+        active: c.active
+      }, { onConflict: 'route' });
+    }
+
+    async function syncAdminPassword(pass) {
+      await supabaseClient.from('app_config').upsert({
+        key: 'admin_config',
+        value: { email: ADMIN_CONFIG.email, password: pass }
+      });
+    }
+
+    async function syncLeave(leave) {
+      const { data } = await supabaseClient.from('leaves').insert({
+        route: leave.route,
+        type: leave.type,
+        start_date: leave.start,
+        end_date: leave.end,
+        days: leave.days,
+        note: leave.note,
+        status: leave.status
+      }).select().single();
+      if (data) leave.id = data.id;
+    }
+
+    async function updateLeaveStatusInDb(id, status) {
+      await supabaseClient.from('leaves').update({ status: status }).eq('id', id);
+    }
+
+    // Inicializace Supabase dat
+    initSupabaseData();
+
+    // Přepsání původních ukládacích akcí s napojením na cloud
+    const originalSaveDailyShift = saveDailyShift;
+    saveDailyShift = async function() {
+      const date = document.getElementById("entryDate").value;
+      if (!date) return alert("Vyberte datum!");
+      const route = currentUser.route;
+      const index = SHIFTS.findIndex(s => s.date === date && s.route === route);
+
+      const shiftData = {
+        date,
+        route,
+        stops: Number(document.getElementById("inputStops").value) || 0,
+        under2: Number(document.getElementById("inputUnder2").value) || 0,
+        over2: Number(document.getElementById("inputOver2").value) || 0,
+        ps: Number(document.getElementById("inputPS").value) || 0,
+        echo: Number(document.getElementById("inputEcho").value) || 0,
+        p30: Number(document.getElementById("inputPickup30").value) || 0,
+        p50: Number(document.getElementById("inputPickup50").value) || 0,
+        p150: Number(document.getElementById("inputPickup150").value) || 0,
+        p200: Number(document.getElementById("inputPickup200").value) || 0,
+        pOver: Number(document.getElementById("inputPickupOver").value) || 0
+      };
+
+      if (index >= 0) SHIFTS[index] = shiftData;
+      else SHIFTS.push(shiftData);
+
+      await syncShiftToDb(shiftData);
+      alert("Směna byla uložena a synchronizována do databáze!");
+      renderCurrentView();
+    };
+
+    const originalSaveSettlement = saveSettlement;
+    saveSettlement = async function() {
+      const monthVal = document.getElementById("selectedMonth").value;
+      const month = (monthVal === "ALL") ? 1 : Number(monthVal);
+      const year = document.getElementById("selectedYear").value;
+      const route = document.getElementById("settleRouteSelect").value;
+      const key = `${year}-${month}`;
+
+      if (!SETTLEMENTS[key]) SETTLEMENTS[key] = {};
+
+      const sData = {
+        stops: Number(document.getElementById("depoStops").value) || 0,
+        under2: Number(document.getElementById("depoUnder2").value) || 0,
+        over2: Number(document.getElementById("depoOver2").value) || 0,
+        ps: Number(document.getElementById("depoPS").value) || 0,
+        echo: Number(document.getElementById("depoEcho").value) || 0,
+        p30: Number(document.getElementById("depoP30").value) || 0,
+        p50: Number(document.getElementById("depoP50").value) || 0,
+        p150: Number(document.getElementById("depoP150").value) || 0,
+        p200: Number(document.getElementById("depoP200").value) || 0,
+        pOver: Number(document.getElementById("depoPOver").value) || 0,
+        leaveDays: Number(document.getElementById("depoLeaveDays").value) || 0,
+        leaveRate: Number(document.getElementById("depoLeaveRate").value) || 1000,
+        bonus: Number(document.getElementById("depoBonus").value) || 0,
+        penalty: Number(document.getElementById("depoPenalty").value) || 0,
+        notes: document.getElementById("depoNotes").value || "",
+        payHPP: Number(document.getElementById("depoPayHPP").value) || 0,
+        payDPP: Number(document.getElementById("depoPayDPP").value) || 0,
+        locked: true
+      };
+
+      SETTLEMENTS[key][route] = sData;
+      await syncSettlementToDb(key, route, sData);
+      alert(`Uzávěrka pro trasu ${route} byla uložena a uzamčena v databázi!`);
+      renderCurrentView();
+    };
+
+    const originalSaveAdminPassword = saveAdminPassword;
+    saveAdminPassword = async function() {
+      const p = document.getElementById("adminNewPassword").value.trim();
+      if (!p) return alert("Zadejte nové heslo správce!");
+      ADMIN_CONFIG.password = p;
+      await syncAdminPassword(p);
+      alert("Heslo správce bylo úspěšně změněno a uloženo v databázi!");
+      document.getElementById("adminNewPassword").value = "";
+    };
+
+    const originalUpdateCourierField = updateCourierField;
+    updateCourierField = async function(route, field, value) {
+      const item = ROUTES_CONFIG.find(r => r.route === route);
+      if (item) {
+        item[field] = value;
+        rebuildRouteDropdowns();
+        await syncCourierConfig(item);
+      }
+    };
+
+    const originalSubmitLeave = submitLeaveRequest;
+    submitLeaveRequest = async function() {
+      const start = document.getElementById("leaveStart").value;
+      const end = document.getElementById("leaveEnd").value;
+      const note = document.getElementById("leaveNote").value;
+      if (!start || !end) return alert("Vyberte začátek i konec volna!");
+
+      const days = Math.round((new Date(end) - new Date(start)) / (1000*60*60*24)) + 1;
+      if (days <= 0) return alert("Datum do musí být po datu od!");
+
+      const leaveObj = { type: "LEAVE", route: currentUser.route, start, end, days, note, status: "PENDING" };
+      LEAVES.push(leaveObj);
+      await syncLeave(leaveObj);
+
+      alert(`Žádost o volno na ${days} dní byla uložena do databáze.`);
+      document.getElementById("leaveNote").value = "";
+      renderCurrentView();
+    };
+
+    const originalApproveLeave = approveLeave;
+    approveLeave = async function(id) {
+      const l = LEAVES.find(x => x.id === id);
+      if (l) {
+        l.status = "APPROVED";
+        await updateLeaveStatusInDb(id, "APPROVED");
+        alert(`Žádost pro trasu ${l.route} byla schválena.`);
+        renderCurrentView();
+      }
+    };
+  </script>
+</body>
+</html>
