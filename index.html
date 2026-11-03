@@ -116,7 +116,7 @@
         <i data-lucide="calculator" class="w-4 h-4"></i> Můj měsíc / rok & Odhad
       </button>
       <button onclick="switchTab('courierLeaderboard')" class="courier-tab-btn px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 bg-white text-slate-700 hover:bg-slate-100" data-target="courierLeaderboard">
-        <i data-lucide="trophy" class="w-4 h-4"></i> 4 Týmové žebříčky
+        <i data-lucide="trophy" class="w-4 h-4"></i> Týmový žebříček
       </button>
       <button onclick="switchTab('sharedCalendar')" class="courier-tab-btn px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 bg-white text-slate-700 hover:bg-slate-100" data-target="sharedCalendar">
         <i data-lucide="calendar" class="w-4 h-4"></i> Kalendář volna
@@ -164,6 +164,11 @@
           </div>
         </div>
 
+        <div id="leaveDayWarning" class="hidden p-4 bg-rose-50 border-2 border-rose-400 rounded-xl text-rose-900 text-xs font-bold flex items-center gap-2">
+          <i data-lucide="alert-triangle" class="w-5 h-5 text-rose-600"></i>
+          <span>Na tento den máte nahlášené nebo schválené volno. Zápis výkonu není povolen.</span>
+        </div>
+
         <div class="flex items-center justify-between border-b pb-3">
           <div>
             <h3 class="text-lg font-black text-[#001e50] uppercase">Zápis denního výkonu</h3>
@@ -175,15 +180,11 @@
           </div>
         </div>
 
-        <div class="space-y-4">
+        <div id="shiftFormBody" class="space-y-4">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Stopky</label>
               <input type="number" id="inputStops" min="0" placeholder="0" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-800 text-lg focus:ring-2 focus:ring-[#001e50] outline-none">
-            </div>
-            <div>
-              <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Lehké balíky do 2 kg</label>
-              <input type="number" id="inputUnder2" min="0" placeholder="0" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-800 text-lg focus:ring-2 focus:ring-[#001e50] outline-none">
             </div>
             <div>
               <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Těžké balíky nad 2 kg</label>
@@ -193,7 +194,7 @@
               <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Balíky do ParcelShopu (PS)</label>
               <input type="number" id="inputPS" min="0" placeholder="0" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-800 text-lg focus:ring-2 focus:ring-[#001e50] outline-none">
             </div>
-            <div class="sm:col-span-2">
+            <div>
               <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Echopaky</label>
               <input type="number" id="inputEcho" min="0" placeholder="0" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-slate-800 text-lg focus:ring-2 focus:ring-[#001e50] outline-none">
             </div>
@@ -269,7 +270,7 @@
                 <tr>
                   <th class="py-2.5 px-3">Datum</th>
                   <th class="py-2.5 px-3">Stopky</th>
-                  <th class="py-2.5 px-3">Balíky (&lt;2 / &gt;2 kg)</th>
+                  <th class="py-2.5 px-3">Těžké balíky</th>
                   <th class="py-2.5 px-3">ParcelShop</th>
                   <th class="py-2.5 px-3">Echopaky</th>
                   <th class="py-2.5 px-3">Svozy celkem</th>
@@ -283,12 +284,12 @@
       </div>
     </div>
 
-    <!-- KURÝR: 3. 4 Týmové žebříčky -->
+    <!-- KURÝR: 3. Týmový žebříček -->
     <div id="courierLeaderboard" class="tab-content">
       <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
         <div class="flex flex-wrap items-center justify-between gap-4 border-b pb-4">
           <div>
-            <h3 class="text-lg font-black text-[#001e50] uppercase">4 Motivační týmové žebříčky</h3>
+            <h3 class="text-lg font-black text-[#001e50] uppercase">Týmový žebříček</h3>
             <p class="text-xs text-slate-500">Porovnání výkonů všech tras (pouze fyzické kusy, bez peněz)</p>
           </div>
           <div class="flex items-center gap-2">
@@ -314,7 +315,7 @@
 
           <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
             <h4 class="text-xs font-black uppercase text-slate-700 mb-3 flex items-center gap-2">
-              <i data-lucide="truck" class="w-4 h-4 text-emerald-600"></i> 3. Počet svezených balíků (svozy)
+              <i data-lucide="truck" class="w-4 h-4 text-emerald-600"></i> 3. Počet svezených balíků
             </h4>
             <div id="leaderboardPickups" class="space-y-2"></div>
           </div>
@@ -341,6 +342,13 @@
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
           <h3 class="text-sm font-black text-[#001e50] uppercase">Žádost o volno / dovolenou</h3>
           <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Typ volna:</label>
+            <select id="leaveTypeSelect" class="w-full px-3 py-2 bg-slate-50 border rounded-lg text-sm font-bold">
+              <option value="PAID">Placené (+1000 Kč / den)</option>
+              <option value="UNPAID">Neplacené (bez nároku na peníze)</option>
+            </select>
+          </div>
+          <div>
             <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Datum od:</label>
             <input type="date" id="leaveStart" class="w-full px-3 py-2 bg-slate-50 border rounded-lg text-sm font-bold">
           </div>
@@ -350,7 +358,7 @@
           </div>
           <div>
             <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Důvod / Poznámka:</label>
-            <textarea id="leaveNote" rows="2" placeholder="Např. Lékař, dovolená, soukromé..." class="w-full px-3 py-2 bg-slate-50 border rounded-lg text-xs"></textarea>
+            <textarea id="leaveNote" rows="2" placeholder="Např. Lékař, dovolená..." class="w-full px-3 py-2 bg-slate-50 border rounded-lg text-xs"></textarea>
           </div>
           <button onclick="submitLeaveRequest()" class="w-full py-2.5 bg-[#001e50] hover:bg-[#002d78] text-[#ffd100] font-black uppercase text-xs rounded-xl shadow transition">
             Odeslat žádost
@@ -406,7 +414,7 @@
                 <tr>
                   <th class="py-2.5 px-3">Trasa</th>
                   <th class="py-2.5 px-3">Stopky</th>
-                  <th class="py-2.5 px-3">Balíky (&lt;2 / &gt;2 kg)</th>
+                  <th class="py-2.5 px-3">Těžké balíky</th>
                   <th class="py-2.5 px-3">ParcelShop</th>
                   <th class="py-2.5 px-3">Svozy</th>
                   <th class="py-2.5 px-3 text-right bg-blue-50/60 text-[#001e50] font-black">Výplata kurýra</th>
@@ -443,10 +451,6 @@
               <div>
                 <label class="block text-[11px] font-bold text-slate-600 mb-1">Stopky</label>
                 <input type="number" id="depoStops" oninput="calculateAdminPayout()" class="w-full px-3 py-2 bg-slate-50 border rounded-lg font-bold text-slate-800">
-              </div>
-              <div>
-                <label class="block text-[11px] font-bold text-slate-600 mb-1">Lehké balíky do 2 kg</label>
-                <input type="number" id="depoUnder2" readonly class="w-full px-3 py-2 bg-slate-100 border rounded-lg font-bold text-slate-600 cursor-not-allowed">
               </div>
               <div>
                 <label class="block text-[11px] font-bold text-slate-600 mb-1">Těžké balíky nad 2 kg</label>
@@ -873,25 +877,16 @@
       return ROUTES_CONFIG.filter(r => r.active).map(r => r.route);
     }
     
-    // BEZPEČNÉ VÝCHOZÍ CENY (FALLBACK)
     const DEFAULT_COURIER_PRICE = { stop: 15.0, over2: 1.0, ps: 3.0, echo: 2.0, p30: 2.0, p50: 1.5, p150: 1.0, p200: 1.0, pOver: 1.0 };
     const DEFAULT_INVOICE_PRICE = { stop: 38.0, under2: 8.0, over2: 12.0, ps: 14.0, echo: 5.0, p30: 3.5, p50: 2.8, p150: 2.2, p200: 2.0, pOver: 1.8 };
 
-    let PRICING_COURIER = {
-      "72034": { ...DEFAULT_COURIER_PRICE },
-      "72039": { ...DEFAULT_COURIER_PRICE },
-      "72044": { ...DEFAULT_COURIER_PRICE },
-      "72072": { ...DEFAULT_COURIER_PRICE },
-      "72093": { ...DEFAULT_COURIER_PRICE }
-    };
+    let PRICING_COURIER = {};
+    let PRICING_INVOICE = {};
 
-    let PRICING_INVOICE = {
-      "72034": { ...DEFAULT_INVOICE_PRICE },
-      "72039": { ...DEFAULT_INVOICE_PRICE },
-      "72044": { ...DEFAULT_INVOICE_PRICE },
-      "72072": { ...DEFAULT_INVOICE_PRICE },
-      "72093": { ...DEFAULT_INVOICE_PRICE }
-    };
+    DEFAULT_ROUTES.forEach(r => {
+      PRICING_COURIER[r.route] = { ...DEFAULT_COURIER_PRICE };
+      PRICING_INVOICE[r.route] = { ...DEFAULT_INVOICE_PRICE };
+    });
 
     let SETTLEMENTS = {};
     let SHIFTS = [];
@@ -926,20 +921,17 @@
     async function initSupabaseData() {
       if (!supabaseClient) return;
       try {
-        // 1. Nastavení správce
         const { data: confData } = await supabaseClient.from('app_config').select('*').eq('key', 'admin_config').single();
         if (confData && confData.value) {
           ADMIN_CONFIG = confData.value;
         }
 
-        // 2. Trvalé načtení uložených ceníků ze Supabase
         const { data: priceData } = await supabaseClient.from('app_config').select('*').eq('key', 'pricing_config').single();
         if (priceData && priceData.value) {
           if (priceData.value.courier) PRICING_COURIER = priceData.value.courier;
           if (priceData.value.invoice) PRICING_INVOICE = priceData.value.invoice;
         }
 
-        // 3. Trasy
         const { data: cData } = await supabaseClient.from('couriers').select('*').order('route');
         if (cData && cData.length > 0) {
           ROUTES_CONFIG = cData;
@@ -952,7 +944,6 @@
         rebuildRouteDropdowns();
         renderCourierManagement();
 
-        // 4. Denní směny
         const { data: sData } = await supabaseClient.from('daily_shifts').select('*');
         if (sData) {
           SHIFTS = sData.map(s => ({
@@ -971,7 +962,6 @@
           }));
         }
 
-        // 5. Uzávěrky
         const { data: settsData } = await supabaseClient.from('settlements').select('*');
         if (settsData) {
           SETTLEMENTS = {};
@@ -1000,7 +990,6 @@
           });
         }
 
-        // 6. Docházka a události
         const { data: lData } = await supabaseClient.from('leaves').select('*').order('start_date', { ascending: false });
         if (lData) {
           LEAVES = lData.map(l => ({
@@ -1017,7 +1006,7 @@
 
         renderCurrentView();
       } catch (err) {
-        console.warn("Chyba při synchronizaci se Supabase (pracuje se s výchozími daty):", err);
+        console.warn("Chyba při synchronizaci se Supabase:", err);
       }
     }
 
@@ -1154,7 +1143,6 @@
       }
     }
 
-    // PŘIHLÁŠENÍ S PODPOROU TEXTU
     function handleLogin() {
       const usernameInput = document.getElementById("loginUsername").value.trim().toLowerCase();
       const pass = document.getElementById("loginPassword").value;
@@ -1290,6 +1278,8 @@
       const dayOfWeek = d.getDay();
       const holidayName = CZECH_HOLIDAYS[dateStr];
       const banner = document.getElementById("holidayBanner");
+      const warningBox = document.getElementById("leaveDayWarning");
+      const formBody = document.getElementById("shiftFormBody");
 
       if (dayOfWeek === 0 || dayOfWeek === 6) {
         alert("O víkendu se standardně nejezdí. Posouvám na pondělí.");
@@ -1305,7 +1295,18 @@
         banner.classList.add("hidden");
       }
 
-      loadDayDataIntoForm();
+      // Kontrola, zda má kurýr na tento den schválené volno
+      const route = currentUser.route;
+      const hasLeave = LEAVES.some(l => l.route === route && l.status === "APPROVED" && l.start <= dateStr && l.end >= dateStr && l.type !== "EVENT");
+      
+      if (hasLeave) {
+        warningBox.classList.remove("hidden");
+        formBody.classList.add("opacity-40", "pointer-events-none");
+      } else {
+        warningBox.classList.add("hidden");
+        formBody.classList.remove("opacity-40", "pointer-events-none");
+        loadDayDataIntoForm();
+      }
     }
 
     function confirmHolidayShift(didDrive) {
@@ -1338,7 +1339,6 @@
 
       if (shift) {
         document.getElementById("inputStops").value = shift.stops || 0;
-        document.getElementById("inputUnder2").value = shift.under2 || 0;
         document.getElementById("inputOver2").value = shift.over2 || 0;
         document.getElementById("inputPS").value = shift.ps || 0;
         document.getElementById("inputEcho").value = shift.echo || 0;
@@ -1348,14 +1348,14 @@
         document.getElementById("inputPickup200").value = shift.p200 || 0;
         document.getElementById("inputPickupOver").value = shift.pOver || 0;
       } else {
-        ["inputStops","inputUnder2","inputOver2","inputPS","inputEcho","inputPickup30","inputPickup50","inputPickup150","inputPickup200","inputPickupOver"].forEach(id => {
-          document.getElementById(id).value = "";
+        ["inputStops","inputOver2","inputPS","inputEcho","inputPickup30","inputPickup50","inputPickup150","inputPickup200","inputPickupOver"].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.value = "";
         });
       }
       calcDayReward();
     }
 
-    // BEZPEČNÝ VÝPOČET ODMĚNY KURÝRA (S POJISTKOU PROTI CHYBĚJÍCÍ SAZBĚ)
     function calcCourierShiftPay(shift, route) {
       const p = PRICING_COURIER[route] || DEFAULT_COURIER_PRICE;
       return ((shift.stops || 0) * (p.stop ?? 15.0)) + 
@@ -1369,7 +1369,6 @@
              ((shift.pOver || 0) * (p.pOver ?? 1.0));
     }
 
-    // BEZPEČNÝ VÝPOČET FAKTURACE (S POJISTKOU PROTI CHYBĚJÍCÍ SAZBĚ)
     function calcInvoiceFromData(data, route) {
       const p = PRICING_INVOICE[route] || DEFAULT_INVOICE_PRICE;
       return ((data.stops || 0) * (p.stop ?? 38.0)) + 
@@ -1388,7 +1387,6 @@
       const route = currentUser.route;
       const shift = {
         stops: Number(document.getElementById("inputStops").value) || 0,
-        under2: Number(document.getElementById("inputUnder2").value) || 0,
         over2: Number(document.getElementById("inputOver2").value) || 0,
         ps: Number(document.getElementById("inputPS").value) || 0,
         echo: Number(document.getElementById("inputEcho").value) || 0,
@@ -1402,7 +1400,7 @@
       document.getElementById("calculatedDayReward").innerText = formatMoney(reward);
     }
 
-    ["inputStops", "inputUnder2", "inputOver2", "inputPS", "inputEcho", "inputPickup30", "inputPickup50", "inputPickup150", "inputPickup200", "inputPickupOver"]
+    ["inputStops", "inputOver2", "inputPS", "inputEcho", "inputPickup30", "inputPickup50", "inputPickup150", "inputPickup200", "inputPickupOver"]
       .forEach(id => {
         const el = document.getElementById(id);
         if (el) el.addEventListener("input", calcDayReward);
@@ -1418,7 +1416,7 @@
         date,
         route,
         stops: Number(document.getElementById("inputStops").value) || 0,
-        under2: Number(document.getElementById("inputUnder2").value) || 0,
+        under2: 0,
         over2: Number(document.getElementById("inputOver2").value) || 0,
         ps: Number(document.getElementById("inputPS").value) || 0,
         echo: Number(document.getElementById("inputEcho").value) || 0,
@@ -1461,7 +1459,7 @@
           <tr class="hover:bg-slate-50">
             <td class="py-2.5 px-3 font-bold text-slate-800">${formatDateCz(s.date)}</td>
             <td class="py-2.5 px-3">${s.stops}</td>
-            <td class="py-2.5 px-3">${s.under2} / ${s.over2}</td>
+            <td class="py-2.5 px-3">${s.over2}</td>
             <td class="py-2.5 px-3">${s.ps}</td>
             <td class="py-2.5 px-3">${s.echo}</td>
             <td class="py-2.5 px-3">${totalPickup} ks</td>
@@ -1517,7 +1515,7 @@
             getActiveRoutes().forEach(r => {
               if (s[r]) {
                 stats[r].stops += s[r].stops || 0;
-                stats[r].packages += ((s[r].under2||0) + (s[r].over2||0));
+                stats[r].packages += (s[r].over2 || 0);
                 stats[r].pickups += ((s[r].p30||0) + (s[r].p50||0) + (s[r].p150||0) + (s[r].p200||0) + (s[r].pOver||0));
                 stats[r].ps += s[r].ps || 0;
               }
@@ -1530,7 +1528,7 @@
             mShifts.forEach(sh => {
               if (stats[sh.route]) {
                 stats[sh.route].stops += sh.stops || 0;
-                stats[sh.route].packages += ((sh.under2||0) + (sh.over2||0));
+                stats[sh.route].packages += (sh.over2 || 0);
                 stats[sh.route].pickups += ((sh.p30||0) + (sh.p50||0) + (sh.p150||0) + (sh.p200||0) + (sh.pOver||0));
                 stats[sh.route].ps += sh.ps || 0;
               }
@@ -1545,7 +1543,7 @@
           getActiveRoutes().forEach(r => {
             if (s[r]) {
               stats[r].stops += s[r].stops || 0;
-              stats[r].packages += ((s[r].under2||0) + (s[r].over2||0));
+              stats[r].packages += (s[r].over2 || 0);
               stats[r].pickups += ((s[r].p30||0) + (s[r].p50||0) + (s[r].p150||0) + (s[r].p200||0) + (s[r].pOver||0));
               stats[r].ps += s[r].ps || 0;
             }
@@ -1558,7 +1556,7 @@
           mShifts.forEach(sh => {
             if (stats[sh.route]) {
               stats[sh.route].stops += sh.stops || 0;
-              stats[sh.route].packages += ((sh.under2||0) + (sh.over2||0));
+              stats[sh.route].packages += (sh.over2 || 0);
               stats[sh.route].pickups += ((sh.p30||0) + (sh.p50||0) + (sh.p150||0) + (sh.p200||0) + (sh.pOver||0));
               stats[sh.route].ps += sh.ps || 0;
             }
@@ -1568,7 +1566,7 @@
 
       renderSingleBoard("leaderboardStops", Object.values(stats).sort((a,b)=>b.stops - a.stops), "stops", "stopek", "bg-[#001e50]");
       renderSingleBoard("leaderboardPackages", Object.values(stats).sort((a,b)=>b.packages - a.packages), "packages", "balíků", "bg-[#ffd100]");
-      renderSingleBoard("leaderboardPickups", Object.values(stats).sort((a,b)=>b.pickups - a.pickups), "pickups", "ks svozů", "bg-emerald-500");
+      renderSingleBoard("leaderboardPickups", Object.values(stats).sort((a,b)=>b.pickups - a.pickups), "pickups", "ks", "bg-emerald-500");
       renderSingleBoard("leaderboardPS", Object.values(stats).sort((a,b)=>b.ps - a.ps), "ps", "do PS/boxu", "bg-purple-600");
     }
 
@@ -1699,21 +1697,23 @@
       if (adminGrid) adminGrid.innerHTML = html;
     }
 
-    // KURÝR: ODESLÁNÍ ŽÁDOSTI O VOLNO
+    // KURÝR: ODESLÁNÍ ŽÁDOSTI O VOLNO S TYPEM (PLACENÉ / NEPLACENÉ)
     async function submitLeaveRequest() {
       const start = document.getElementById("leaveStart").value;
       const end = document.getElementById("leaveEnd").value;
+      const leaveType = document.getElementById("leaveTypeSelect").value;
       const note = document.getElementById("leaveNote").value;
       if (!start || !end) return alert("Vyberte začátek i konec volna!");
 
       const days = Math.round((new Date(end) - new Date(start)) / (1000*60*60*24)) + 1;
       if (days <= 0) return alert("Datum do musí být po datu od!");
 
-      const leaveObj = { type: "LEAVE", route: currentUser.route, start, end, days, note, status: "PENDING" };
+      const notePrefix = leaveType === 'PAID' ? '[Placené] ' : '[Neplacené] ';
+      const leaveObj = { type: "LEAVE", route: currentUser.route, start, end, days, note: notePrefix + (note || 'Dovolená'), status: "PENDING" };
       await syncLeave(leaveObj);
       LEAVES.unshift(leaveObj);
 
-      alert(`Žádost o volno na ${days} dní byla odeslána správci ke schválení.`);
+      alert(`Žádost o ${leaveType === 'PAID' ? 'placené' : 'neplacené'} volno na ${days} dní byla odeslána správci.`);
       document.getElementById("leaveNote").value = "";
       renderCurrentView();
     }
@@ -1859,8 +1859,7 @@
             <div class="font-black text-slate-700 uppercase">Uznaný výkon:</div>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-slate-600">
               <div>Stopky: <b>${settle.stops}</b></div>
-              <div>Lehké balíky do 2 kg: <b>${settle.under2}</b></div>
-              <div>Těžké balíky nad 2 kg: <b>${settle.over2}</b></div>
+              <div>Těžké balíky: <b>${settle.over2}</b></div>
               <div>ParcelShop: <b>${settle.ps}</b></div>
               <div>Echopaky: <b>${settle.echo}</b></div>
               <div class="col-span-2 sm:col-span-4">Svozy celkem: <b>${(settle.p30+settle.p50+settle.p150+settle.p200+settle.pOver)} ks</b></div>
@@ -1936,7 +1935,7 @@
             const k = `${year}-${m}`;
             const s = SETTLEMENTS[k]?.[route];
             if (s && s.locked) {
-              routeData.stops += s.stops || 0; routeData.under2 += s.under2 || 0; routeData.over2 += s.over2 || 0; routeData.ps += s.ps || 0; routeData.echo += s.echo || 0;
+              routeData.stops += s.stops || 0; routeData.over2 += s.over2 || 0; routeData.ps += s.ps || 0; routeData.echo += s.echo || 0;
               routeData.p30 += s.p30 || 0; routeData.p50 += s.p50 || 0; routeData.p150 += s.p150 || 0; routeData.p200 += s.p200 || 0; routeData.pOver += s.pOver || 0;
               const p = PRICING_COURIER[route] || DEFAULT_COURIER_PRICE;
               const base = (s.stops * (p.stop ?? 15.0)) + 
@@ -1955,7 +1954,7 @@
                 return d.getFullYear() == year && (d.getMonth() + 1) == m && sh.route === route;
               });
               mShifts.forEach(sh => {
-                routeData.stops += sh.stops || 0; routeData.under2 += sh.under2 || 0; routeData.over2 += sh.over2 || 0; routeData.ps += sh.ps || 0; routeData.echo += sh.echo || 0;
+                routeData.stops += sh.stops || 0; routeData.over2 += sh.over2 || 0; routeData.ps += sh.ps || 0; routeData.echo += sh.echo || 0;
                 routeData.p30 += sh.p30 || 0; routeData.p50 += sh.p50 || 0; routeData.p150 += sh.p150 || 0; routeData.p200 += sh.p200 || 0; routeData.pOver += sh.pOver || 0;
                 courierPayout += calcCourierShiftPay(sh, route);
               });
@@ -1980,7 +1979,7 @@
                          (s.p200 * (p.p200 ?? 1.0)) + 
                          (s.pOver * (p.pOver ?? 1.0));
             courierPayout = base + ((s.leaveDays||0)*(s.leaveRate||1000)) + (s.bonus||0) - (s.penalty||0);
-            invoiceBase = calcInvoiceFromData(s, route);
+            invoiceBase = calcInvoiceFromData(routeData, route);
           } else {
             isLocked = false;
             const mShifts = SHIFTS.filter(sh => {
@@ -1988,7 +1987,7 @@
               return d.getFullYear() == year && (d.getMonth() + 1) == month && sh.route === route;
             });
             mShifts.forEach(sh => {
-              routeData.stops += sh.stops || 0; routeData.under2 += sh.under2 || 0; routeData.over2 += sh.over2 || 0; routeData.ps += sh.ps || 0; routeData.echo += sh.echo || 0;
+              routeData.stops += sh.stops || 0; routeData.over2 += sh.over2 || 0; routeData.ps += sh.ps || 0; routeData.echo += sh.echo || 0;
               routeData.p30 += sh.p30 || 0; routeData.p50 += sh.p50 || 0; routeData.p150 += sh.p150 || 0; routeData.p200 += sh.p200 || 0; routeData.pOver += sh.pOver || 0;
               courierPayout += calcCourierShiftPay(sh, route);
             });
@@ -1997,7 +1996,7 @@
         }
 
         const totalPickup = (routeData.p30||0)+(routeData.p50||0)+(routeData.p150||0)+(routeData.p200||0)+(routeData.pOver||0);
-        const totalPack = (routeData.under2||0)+(routeData.over2||0);
+        const totalPack = routeData.over2 || 0;
         const invoiceWithVat = invoiceBase * 1.21;
         const difference = invoiceWithVat - courierPayout;
 
@@ -2011,7 +2010,7 @@
           <tr class="hover:bg-slate-50">
             <td class="py-2.5 px-3 font-black text-slate-800 whitespace-nowrap">Trasa ${route}</td>
             <td class="py-2.5 px-3 font-bold whitespace-nowrap">${routeData.stops}</td>
-            <td class="py-2.5 px-3 whitespace-nowrap">${routeData.under2} / ${routeData.over2}</td>
+            <td class="py-2.5 px-3 whitespace-nowrap">${routeData.over2}</td>
             <td class="py-2.5 px-3 whitespace-nowrap">${routeData.ps}</td>
             <td class="py-2.5 px-3 whitespace-nowrap">${totalPickup} ks</td>
             <td class="py-2.5 px-3 text-right font-black text-[#001e50] bg-blue-50/40 whitespace-nowrap">${formatMoney(courierPayout)}</td>
@@ -2181,7 +2180,6 @@
 
       if (s) {
         document.getElementById("depoStops").value = s.stops || 0;
-        document.getElementById("depoUnder2").value = s.under2 || 0;
         document.getElementById("depoOver2").value = s.over2 || 0;
         document.getElementById("depoPS").value = s.ps || 0;
         document.getElementById("depoEcho").value = s.echo || 0;
@@ -2202,14 +2200,13 @@
           const d = new Date(sh.date);
           return d.getFullYear() == year && (d.getMonth() + 1) == month && sh.route === route;
         });
-        let sumStops=0, sumUnder=0, sumOver=0, sumPS=0, sumEcho=0, sum30=0, sum50=0, sum150=0, sum200=0, sumOverP=0;
+        let sumStops=0, sumOver=0, sumPS=0, sumEcho=0, sum30=0, sum50=0, sum150=0, sum200=0, sumOverP=0;
         mShifts.forEach(sh => {
-          sumStops += sh.stops || 0; sumUnder += sh.under2 || 0; sumOver += sh.over2 || 0; sumPS += sh.ps || 0; sumEcho += sh.echo || 0;
+          sumStops += sh.stops || 0; sumOver += sh.over2 || 0; sumPS += sh.ps || 0; sumEcho += sh.echo || 0;
           sum30 += sh.p30 || 0; sum50 += sh.p50 || 0; sum150 += sh.p150 || 0; sum200 += sh.p200 || 0; sumOverP += sh.pOver || 0;
         });
 
         document.getElementById("depoStops").value = sumStops;
-        document.getElementById("depoUnder2").value = sumUnder;
         document.getElementById("depoOver2").value = sumOver;
         document.getElementById("depoPS").value = sumPS;
         document.getElementById("depoEcho").value = sumEcho;
@@ -2218,7 +2215,16 @@
         document.getElementById("depoP150").value = sum150;
         document.getElementById("depoP200").value = sum200;
         document.getElementById("depoPOver").value = sumOverP;
-        document.getElementById("depoLeaveDays").value = 0;
+        
+        // Automatický výpočet schválených placených volnů pro tento měsíc v uzávěrce
+        const mLeavesCount = LEAVES.filter(l => {
+          if (l.route !== route || l.status !== "APPROVED" || l.type === "EVENT") return false;
+          if (!l.note.includes("[Placené]")) return false;
+          const [ly, lm, ld] = l.start.split("-");
+          return Number(ly) == year && Number(lm) == month;
+        }).reduce((acc, l) => acc + l.days, 0);
+
+        document.getElementById("depoLeaveDays").value = mLeavesCount;
         document.getElementById("depoLeaveRate").value = 1000;
         document.getElementById("depoBonus").value = 0;
         document.getElementById("depoPenalty").value = 0;
@@ -2283,7 +2289,7 @@
 
       const sData = {
         stops: Number(document.getElementById("depoStops").value) || 0,
-        under2: Number(document.getElementById("depoUnder2").value) || 0,
+        under2: 0,
         over2: Number(document.getElementById("depoOver2").value) || 0,
         ps: Number(document.getElementById("depoPS").value) || 0,
         echo: Number(document.getElementById("depoEcho").value) || 0,
@@ -2382,9 +2388,9 @@
     }
 
     function downloadCSVBackup() {
-      let csv = "Datum;Trasa;Stopky;Baliky_pod_2kg;Baliky_nad_2kg;ParcelShop;Echopaky;Svoz_do_30;Svoz_do_50;Svoz_do_150;Svoz_do_200;Svoz_nad_200\n";
+      let csv = "Datum;Trasa;Stopky;Těžké_baliky;ParcelShop;Echopaky;Svoz_do_30;Svoz_do_50;Svoz_do_150;Svoz_do_200;Svoz_nad_200\n";
       SHIFTS.forEach(s => {
-        csv += `${s.date};${s.route};${s.stops};${s.under2};${s.over2};${s.ps};${s.echo};${s.p30};${s.p50};${s.p150};${s.p200};${s.pOver}\n`;
+        csv += `${s.date};${s.route};${s.stops};${s.over2};${s.ps};${s.echo};${s.p30};${s.p50};${s.p150};${s.p200};${s.pOver}\n`;
       });
       downloadFile(csv, "DAST_PEBO_Smeny.csv", "text/csv;charset=utf-8;");
     }
