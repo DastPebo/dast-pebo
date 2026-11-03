@@ -873,20 +873,24 @@
       return ROUTES_CONFIG.filter(r => r.active).map(r => r.route);
     }
     
+    // BEZPEČNÉ VÝCHOZÍ CENY (FALLBACK)
+    const DEFAULT_COURIER_PRICE = { stop: 15.0, over2: 1.0, ps: 3.0, echo: 2.0, p30: 2.0, p50: 1.5, p150: 1.0, p200: 1.0, pOver: 1.0 };
+    const DEFAULT_INVOICE_PRICE = { stop: 38.0, under2: 8.0, over2: 12.0, ps: 14.0, echo: 5.0, p30: 3.5, p50: 2.8, p150: 2.2, p200: 2.0, pOver: 1.8 };
+
     let PRICING_COURIER = {
-      "72034": { stop: 15.0, over2: 1.0, ps: 3.0, echo: 2.0, p30: 2.0, p50: 1.5, p150: 1.0, p200: 1.0, pOver: 1.0 },
-      "72039": { stop: 15.0, over2: 1.0, ps: 3.0, echo: 2.0, p30: 2.0, p50: 1.5, p150: 1.0, p200: 1.0, pOver: 1.0 },
-      "72044": { stop: 15.0, over2: 1.0, ps: 3.0, echo: 2.0, p30: 2.0, p50: 1.5, p150: 1.0, p200: 1.0, pOver: 1.0 },
-      "72072": { stop: 15.0, over2: 1.0, ps: 3.0, echo: 2.0, p30: 2.0, p50: 1.5, p150: 1.0, p200: 1.0, pOver: 1.0 },
-      "72093": { stop: 15.0, over2: 1.0, ps: 3.0, echo: 2.0, p30: 2.0, p50: 1.5, p150: 1.0, p200: 1.0, pOver: 1.0 }
+      "72034": { ...DEFAULT_COURIER_PRICE },
+      "72039": { ...DEFAULT_COURIER_PRICE },
+      "72044": { ...DEFAULT_COURIER_PRICE },
+      "72072": { ...DEFAULT_COURIER_PRICE },
+      "72093": { ...DEFAULT_COURIER_PRICE }
     };
 
     let PRICING_INVOICE = {
-      "72034": { stop: 38.0, under2: 8.0, over2: 12.0, ps: 14.0, echo: 5.0, p30: 3.5, p50: 2.8, p150: 2.2, p200: 2.0, pOver: 1.8 },
-      "72039": { stop: 38.0, under2: 8.0, over2: 12.0, ps: 14.0, echo: 5.0, p30: 3.5, p50: 2.8, p150: 2.2, p200: 2.0, pOver: 1.8 },
-      "72044": { stop: 38.0, under2: 8.0, over2: 12.0, ps: 14.0, echo: 5.0, p30: 3.5, p50: 2.8, p150: 2.2, p200: 2.0, pOver: 1.8 },
-      "72072": { stop: 38.0, under2: 8.0, over2: 12.0, ps: 14.0, echo: 5.0, p30: 3.5, p50: 2.8, p150: 2.2, p200: 2.0, pOver: 1.8 },
-      "72093": { stop: 38.0, under2: 8.0, over2: 12.0, ps: 14.0, echo: 5.0, p30: 3.5, p50: 2.8, p150: 2.2, p200: 2.0, pOver: 1.8 }
+      "72034": { ...DEFAULT_INVOICE_PRICE },
+      "72039": { ...DEFAULT_INVOICE_PRICE },
+      "72044": { ...DEFAULT_INVOICE_PRICE },
+      "72072": { ...DEFAULT_INVOICE_PRICE },
+      "72093": { ...DEFAULT_INVOICE_PRICE }
     };
 
     let SETTLEMENTS = {};
@@ -922,11 +926,20 @@
     async function initSupabaseData() {
       if (!supabaseClient) return;
       try {
+        // 1. Nastavení správce
         const { data: confData } = await supabaseClient.from('app_config').select('*').eq('key', 'admin_config').single();
         if (confData && confData.value) {
           ADMIN_CONFIG = confData.value;
         }
 
+        // 2. Trvalé načtení uložených ceníků ze Supabase
+        const { data: priceData } = await supabaseClient.from('app_config').select('*').eq('key', 'pricing_config').single();
+        if (priceData && priceData.value) {
+          if (priceData.value.courier) PRICING_COURIER = priceData.value.courier;
+          if (priceData.value.invoice) PRICING_INVOICE = priceData.value.invoice;
+        }
+
+        // 3. Trasy
         const { data: cData } = await supabaseClient.from('couriers').select('*').order('route');
         if (cData && cData.length > 0) {
           ROUTES_CONFIG = cData;
@@ -939,52 +952,55 @@
         rebuildRouteDropdowns();
         renderCourierManagement();
 
+        // 4. Denní směny
         const { data: sData } = await supabaseClient.from('daily_shifts').select('*');
         if (sData) {
           SHIFTS = sData.map(s => ({
             date: s.date,
             route: s.route,
-            stops: s.stops || 0,
-            under2: s.under2 || 0,
-            over2: s.over2 || 0,
-            ps: s.ps || 0,
-            echo: s.echo || 0,
-            p30: s.p30 || 0,
-            p50: s.p50 || 0,
-            p150: s.p150 || 0,
-            p200: s.p200 || 0,
-            pOver: s.pover || s.pOver || 0
+            stops: Number(s.stops) || 0,
+            under2: Number(s.under2) || 0,
+            over2: Number(s.over2) || 0,
+            ps: Number(s.ps) || 0,
+            echo: Number(s.echo) || 0,
+            p30: Number(s.p30) || 0,
+            p50: Number(s.p50) || 0,
+            p150: Number(s.p150) || 0,
+            p200: Number(s.p200) || 0,
+            pOver: Number(s.pover || s.pOver) || 0
           }));
         }
 
+        // 5. Uzávěrky
         const { data: settsData } = await supabaseClient.from('settlements').select('*');
         if (settsData) {
           SETTLEMENTS = {};
           settsData.forEach(st => {
             if (!SETTLEMENTS[st.period]) SETTLEMENTS[st.period] = {};
             SETTLEMENTS[st.period][st.route] = {
-              stops: st.stops,
-              under2: st.under2,
-              over2: st.over2,
-              ps: st.ps,
-              echo: st.echo,
-              p30: st.p30,
-              p50: st.p50,
-              p150: st.p150,
-              p200: st.p200,
-              pOver: st.pover || st.pOver || 0,
-              leaveDays: st.leave_days,
-              leaveRate: st.leave_rate,
-              bonus: st.bonus,
-              penalty: st.penalty,
-              notes: st.notes,
-              payHPP: st.pay_hpp,
-              payDPP: st.pay_dpp,
+              stops: Number(st.stops) || 0,
+              under2: Number(st.under2) || 0,
+              over2: Number(st.over2) || 0,
+              ps: Number(st.ps) || 0,
+              echo: Number(st.echo) || 0,
+              p30: Number(st.p30) || 0,
+              p50: Number(st.p50) || 0,
+              p150: Number(st.p150) || 0,
+              p200: Number(st.p200) || 0,
+              pOver: Number(st.pover || st.pOver) || 0,
+              leaveDays: Number(st.leave_days) || 0,
+              leaveRate: Number(st.leave_rate) || 1000,
+              bonus: Number(st.bonus) || 0,
+              penalty: Number(st.penalty) || 0,
+              notes: st.notes || "",
+              payHPP: Number(st.pay_hpp) || 0,
+              payDPP: Number(st.pay_dpp) || 0,
               locked: st.locked
             };
           });
         }
 
+        // 6. Docházka a události
         const { data: lData } = await supabaseClient.from('leaves').select('*').order('start_date', { ascending: false });
         if (lData) {
           LEAVES = lData.map(l => ({
@@ -1065,6 +1081,14 @@
       await supabaseClient.from('app_config').upsert({
         key: 'admin_config',
         value: { username: "admin", email: ADMIN_CONFIG.email, password: pass }
+      });
+    }
+
+    async function syncPricingToDb() {
+      if (!supabaseClient) return;
+      await supabaseClient.from('app_config').upsert({
+        key: 'pricing_config',
+        value: { courier: PRICING_COURIER, invoice: PRICING_INVOICE }
       });
     }
 
@@ -1331,16 +1355,33 @@
       calcDayReward();
     }
 
+    // BEZPEČNÝ VÝPOČET ODMĚNY KURÝRA (S POJISTKOU PROTI CHYBĚJÍCÍ SAZBĚ)
     function calcCourierShiftPay(shift, route) {
-      const p = PRICING_COURIER[route] || { stop: 15, over2: 1, ps: 3, echo: 2, p30: 2, p50: 1.5, p150: 1, p200: 1, pOver: 1 };
-      return (shift.stops * p.stop) + ((shift.over2||0) * p.over2) + ((shift.ps||0) * p.ps) + ((shift.echo||0) * p.echo) +
-             ((shift.p30||0)*p.p30) + ((shift.p50||0)*p.p50) + ((shift.p150||0)*p.p150) + ((shift.p200||0)*p.p200) + ((shift.pOver||0)*p.pOver);
+      const p = PRICING_COURIER[route] || DEFAULT_COURIER_PRICE;
+      return ((shift.stops || 0) * (p.stop ?? 15.0)) + 
+             ((shift.over2 || 0) * (p.over2 ?? 1.0)) + 
+             ((shift.ps || 0) * (p.ps ?? 3.0)) + 
+             ((shift.echo || 0) * (p.echo ?? 2.0)) +
+             ((shift.p30 || 0) * (p.p30 ?? 2.0)) + 
+             ((shift.p50 || 0) * (p.p50 ?? 1.5)) + 
+             ((shift.p150 || 0) * (p.p150 ?? 1.0)) + 
+             ((shift.p200 || 0) * (p.p200 ?? 1.0)) + 
+             ((shift.pOver || 0) * (p.pOver ?? 1.0));
     }
 
+    // BEZPEČNÝ VÝPOČET FAKTURACE (S POJISTKOU PROTI CHYBĚJÍCÍ SAZBĚ)
     function calcInvoiceFromData(data, route) {
-      const p = PRICING_INVOICE[route] || { stop: 38, under2: 8, over2: 12, ps: 14, echo: 5, p30: 3.5, p50: 2.8, p150: 2.2, p200: 2, pOver: 1.8 };
-      return (data.stops * p.stop) + ((data.under2||0) * p.under2) + ((data.over2||0) * p.over2) + ((data.ps||0) * p.ps) + ((data.echo||0) * p.echo) +
-             ((data.p30||0)*p.p30) + ((data.p50||0)*p.p50) + ((data.p150||0)*p.p150) + ((data.p200||0)*p.p200) + ((data.pOver||0)*p.pOver);
+      const p = PRICING_INVOICE[route] || DEFAULT_INVOICE_PRICE;
+      return ((data.stops || 0) * (p.stop ?? 38.0)) + 
+             ((data.under2 || 0) * (p.under2 ?? 8.0)) + 
+             ((data.over2 || 0) * (p.over2 ?? 12.0)) + 
+             ((data.ps || 0) * (p.ps ?? 14.0)) + 
+             ((data.echo || 0) * (p.echo ?? 5.0)) +
+             ((data.p30 || 0) * (p.p30 ?? 3.5)) + 
+             ((data.p50 || 0) * (p.p50 ?? 2.8)) + 
+             ((data.p150 || 0) * (p.p150 ?? 2.2)) + 
+             ((data.p200 || 0) * (p.p200 ?? 2.0)) + 
+             ((data.pOver || 0) * (p.pOver ?? 1.8));
     }
 
     function calcDayReward() {
@@ -1546,7 +1587,7 @@
       `).join("");
     }
 
-    // KURÝRSKÝ KALENDÁŘ (ZOBRAZUJE VOLNA I VÝPOMOCI VŠECH)
+    // KURÝRSKÝ KALENDÁŘ
     function renderCalendar() {
       const monthVal = document.getElementById("selectedMonth").value;
       const year = Number(document.getElementById("selectedYear").value);
@@ -1587,7 +1628,7 @@
       if (grid) grid.innerHTML = html;
     }
 
-    // ADMINISTRÁTORSKÝ KALENDÁŘ (ZOBRAZUJE VOLNA, ČEKAJÍCÍ ŽÁDOSTI I VÝPOMOCI)
+    // ADMINISTRÁTORSKÝ KALENDÁŘ
     function renderAdminCalendar() {
       const monthVal = document.getElementById("selectedMonth").value;
       const year = Number(document.getElementById("selectedYear").value);
@@ -1734,7 +1775,6 @@
             ${l.status === 'PENDING' ? `
               <button onclick="approveLeave(${l.id})" class="px-2.5 py-1 bg-emerald-600 text-white rounded font-bold text-[10px] hover:bg-emerald-700 shadow-sm">Schválit</button>
             ` : ''}
-            <!-- TLAČÍTKO PRO ZRUŠENÍ / SMAZÁNÍ UDÁLOSTI -->
             <button onclick="cancelLeave(${l.id})" class="px-2.5 py-1 bg-rose-600 text-white rounded font-bold text-[10px] hover:bg-rose-700 shadow-sm">
               Zrušit
             </button>
@@ -1792,9 +1832,16 @@
         return;
       }
 
-      const p = PRICING_COURIER[currentUser.route] || { stop: 15, over2: 1, ps: 3, echo: 2, p30: 2, p50: 1.5, p150: 1, p200: 1, pOver: 1 };
-      const baseEarned = (settle.stops * p.stop) + (settle.over2 * p.over2) + (settle.ps * p.ps) + (settle.echo * p.echo) +
-                         (settle.p30 * p.p30) + (settle.p50 * p.p50) + (settle.p150 * p.p150) + (settle.p200 * p.p200) + (settle.pOver * p.pOver);
+      const p = PRICING_COURIER[currentUser.route] || DEFAULT_COURIER_PRICE;
+      const baseEarned = (settle.stops * (p.stop ?? 15.0)) + 
+                         (settle.over2 * (p.over2 ?? 1.0)) + 
+                         (settle.ps * (p.ps ?? 3.0)) + 
+                         (settle.echo * (p.echo ?? 2.0)) +
+                         (settle.p30 * (p.p30 ?? 2.0)) + 
+                         (settle.p50 * (p.p50 ?? 1.5)) + 
+                         (settle.p150 * (p.p150 ?? 1.0)) + 
+                         (settle.p200 * (p.p200 ?? 1.0)) + 
+                         (settle.pOver * (p.pOver ?? 1.0));
       const leavePay = (settle.leaveDays || 0) * (settle.leaveRate || 1000);
       const finalTotal = baseEarned + leavePay + (settle.bonus || 0) - (settle.penalty || 0);
       const rest = finalTotal - (settle.payHPP || 0) - (settle.payDPP || 0);
@@ -1891,9 +1938,16 @@
             if (s && s.locked) {
               routeData.stops += s.stops || 0; routeData.under2 += s.under2 || 0; routeData.over2 += s.over2 || 0; routeData.ps += s.ps || 0; routeData.echo += s.echo || 0;
               routeData.p30 += s.p30 || 0; routeData.p50 += s.p50 || 0; routeData.p150 += s.p150 || 0; routeData.p200 += s.p200 || 0; routeData.pOver += s.pOver || 0;
-              const p = PRICING_COURIER[route];
-              const base = (s.stops * p.stop) + (s.over2 * p.over2) + (s.ps * p.ps) + (s.echo * p.echo) +
-                           (s.p30 * p.p30) + (s.p50 * p.p50) + (s.p150 * p.p150) + (s.p200 * p.p200) + (s.pOver * p.pOver);
+              const p = PRICING_COURIER[route] || DEFAULT_COURIER_PRICE;
+              const base = (s.stops * (p.stop ?? 15.0)) + 
+                           (s.over2 * (p.over2 ?? 1.0)) + 
+                           (s.ps * (p.ps ?? 3.0)) + 
+                           (s.echo * (p.echo ?? 2.0)) +
+                           (s.p30 * (p.p30 ?? 2.0)) + 
+                           (s.p50 * (p.p50 ?? 1.5)) + 
+                           (s.p150 * (p.p150 ?? 1.0)) + 
+                           (s.p200 * (p.p200 ?? 1.0)) + 
+                           (s.pOver * (p.pOver ?? 1.0));
               courierPayout += base + ((s.leaveDays||0)*(s.leaveRate||1000)) + (s.bonus||0) - (s.penalty||0);
             } else {
               const mShifts = SHIFTS.filter(sh => {
@@ -1915,9 +1969,16 @@
           if (s && s.locked) {
             isLocked = true;
             routeData = { ...s };
-            const p = PRICING_COURIER[route];
-            const base = (s.stops * p.stop) + (s.over2 * p.over2) + (s.ps * p.ps) + (s.echo * p.echo) +
-                         (s.p30 * p.p30) + (s.p50 * p.p50) + (s.p150 * p.p150) + (s.p200 * p.p200) + (s.pOver * p.pOver);
+            const p = PRICING_COURIER[route] || DEFAULT_COURIER_PRICE;
+            const base = (s.stops * (p.stop ?? 15.0)) + 
+                         (s.over2 * (p.over2 ?? 1.0)) + 
+                         (s.ps * (p.ps ?? 3.0)) + 
+                         (s.echo * (p.echo ?? 2.0)) +
+                         (s.p30 * (p.p30 ?? 2.0)) + 
+                         (s.p50 * (p.p50 ?? 1.5)) + 
+                         (s.p150 * (p.p150 ?? 1.0)) + 
+                         (s.p200 * (p.p200 ?? 1.0)) + 
+                         (s.pOver * (p.pOver ?? 1.0));
             courierPayout = base + ((s.leaveDays||0)*(s.leaveRate||1000)) + (s.bonus||0) - (s.penalty||0);
             invoiceBase = calcInvoiceFromData(s, route);
           } else {
@@ -2096,12 +2157,13 @@
       };
       ROUTES_CONFIG.push(newObj);
 
-      PRICING_COURIER[newRoute] = { stop: 15.0, over2: 1.0, ps: 3.0, echo: 2.0, p30: 2.0, p50: 1.5, p150: 1.0, p200: 1.0, pOver: 1.0 };
-      PRICING_INVOICE[newRoute] = { stop: 38.0, under2: 8.0, over2: 12.0, ps: 14.0, echo: 5.0, p30: 3.5, p50: 2.8, p150: 2.2, p200: 2.0, pOver: 1.8 };
+      PRICING_COURIER[newRoute] = { ...DEFAULT_COURIER_PRICE };
+      PRICING_INVOICE[newRoute] = { ...DEFAULT_INVOICE_PRICE };
 
       rebuildRouteDropdowns();
       try {
         await syncCourierConfig(newObj);
+        await syncPricingToDb();
       } catch (e) {
         console.warn("Chyba synchronizace, uloženo v paměti.");
       }
@@ -2169,7 +2231,7 @@
 
     function calculateAdminPayout() {
       const route = document.getElementById("settleRouteSelect").value;
-      const p = PRICING_COURIER[route] || { stop: 15, over2: 1, ps: 3, echo: 2, p30: 2, p50: 1.5, p150: 1, p200: 1, pOver: 1 };
+      const p = PRICING_COURIER[route] || DEFAULT_COURIER_PRICE;
 
       const stops = Number(document.getElementById("depoStops").value) || 0;
       const over2 = Number(document.getElementById("depoOver2").value) || 0;
@@ -2181,8 +2243,15 @@
       const p200 = Number(document.getElementById("depoP200").value) || 0;
       const pOver = Number(document.getElementById("depoPOver").value) || 0;
 
-      const base = (stops * p.stop) + (over2 * p.over2) + (ps * p.ps) + (echo * p.echo) +
-                   (p30 * p.p30) + (p50 * p.p50) + (p150 * p.p150) + (p200 * p.p200) + (pOver * p.pOver);
+      const base = (stops * (p.stop ?? 15.0)) + 
+                   (over2 * (p.over2 ?? 1.0)) + 
+                   (ps * (p.ps ?? 3.0)) + 
+                   (echo * (p.echo ?? 2.0)) +
+                   (p30 * (p.p30 ?? 2.0)) + 
+                   (p50 * (p.p50 ?? 1.5)) + 
+                   (p150 * (p.p150 ?? 1.0)) + 
+                   (p200 * (p.p200 ?? 1.0)) + 
+                   (pOver * (p.pOver ?? 1.0));
 
       const leaveDays = Number(document.getElementById("depoLeaveDays").value) || 0;
       const leaveRate = Number(document.getElementById("depoLeaveRate").value) || 1000;
@@ -2255,8 +2324,8 @@
 
     function loadPricingForRoute() {
       const route = document.getElementById("pricingRouteSelect").value;
-      const c = PRICING_COURIER[route] || { stop: 15, over2: 1, ps: 3, echo: 2, p30: 2, p50: 1.5, p150: 1, p200: 1, pOver: 1 };
-      const inv = PRICING_INVOICE[route] || { stop: 38, under2: 8, over2: 12, ps: 14, echo: 5, p30: 3.5, p50: 2.8, p150: 2.2, p200: 2, pOver: 1.8 };
+      const c = PRICING_COURIER[route] || DEFAULT_COURIER_PRICE;
+      const inv = PRICING_INVOICE[route] || DEFAULT_INVOICE_PRICE;
 
       document.getElementById("rateStop").value = c.stop;
       document.getElementById("rateOver2").value = c.over2;
@@ -2280,26 +2349,26 @@
       document.getElementById("invPOver").value = inv.pOver;
     }
 
-    function savePricingForRoute() {
+    async function savePricingForRoute() {
       const route = document.getElementById("pricingRouteSelect").value;
       PRICING_COURIER[route] = {
-        stop: Number(document.getElementById("rateStop").value) || 15,
-        over2: Number(document.getElementById("rateOver2").value) || 1,
-        ps: Number(document.getElementById("ratePS").value) || 3,
-        echo: Number(document.getElementById("rateEcho").value) || 2,
-        p30: Number(document.getElementById("rateP30").value) || 2,
+        stop: Number(document.getElementById("rateStop").value) || 15.0,
+        over2: Number(document.getElementById("rateOver2").value) || 1.0,
+        ps: Number(document.getElementById("ratePS").value) || 3.0,
+        echo: Number(document.getElementById("rateEcho").value) || 2.0,
+        p30: Number(document.getElementById("rateP30").value) || 2.0,
         p50: Number(document.getElementById("rateP50").value) || 1.5,
-        p150: Number(document.getElementById("rateP150").value) || 1,
-        p200: Number(document.getElementById("rateP200").value) || 1,
-        pOver: Number(document.getElementById("ratePOver").value) || 1
+        p150: Number(document.getElementById("rateP150").value) || 1.0,
+        p200: Number(document.getElementById("rateP200").value) || 1.0,
+        pOver: Number(document.getElementById("ratePOver").value) || 1.0
       };
 
       PRICING_INVOICE[route] = {
-        stop: Number(document.getElementById("invStop").value) || 38,
-        under2: Number(document.getElementById("invUnder2").value) || 8,
-        over2: Number(document.getElementById("invOver2").value) || 12,
-        ps: Number(document.getElementById("invPS").value) || 14,
-        echo: Number(document.getElementById("invEcho").value) || 5,
+        stop: Number(document.getElementById("invStop").value) || 38.0,
+        under2: Number(document.getElementById("invUnder2").value) || 8.0,
+        over2: Number(document.getElementById("invOver2").value) || 12.0,
+        ps: Number(document.getElementById("invPS").value) || 14.0,
+        echo: Number(document.getElementById("invEcho").value) || 5.0,
         p30: Number(document.getElementById("invP30").value) || 3.5,
         p50: Number(document.getElementById("invP50").value) || 2.8,
         p150: Number(document.getElementById("invP150").value) || 2.2,
@@ -2307,7 +2376,8 @@
         pOver: Number(document.getElementById("invPOver").value) || 1.8
       };
 
-      alert(`Sazby pro trasu ${route} byly uloženy!`);
+      await syncPricingToDb();
+      alert(`Sazby pro trasu ${route} byly uloženy do databáze!`);
       renderCurrentView();
     }
 
