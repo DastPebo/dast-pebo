@@ -456,23 +456,23 @@
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="block text-[11px] font-bold text-slate-600 mb-1">Stopky</label>
-                <input type="number" id="depoStops" oninput="calculateAdminPayout()" class="w-full px-3 py-2 bg-slate-50 border rounded-lg font-bold text-slate-800">
+                <input type="number" id="depoStops" oninput="calculateAdminPayout(true)" class="w-full px-3 py-2 bg-slate-50 border rounded-lg font-bold text-slate-800">
               </div>
               <div>
                 <label class="block text-[11px] font-bold text-slate-600 mb-1">Lehké balíky do 2 kg</label>
-                <input type="number" id="depoUnder2" oninput="calculateAdminPayout()" class="w-full px-3 py-2 bg-slate-50 border rounded-lg font-bold text-slate-800">
+                <input type="number" id="depoUnder2" oninput="calculateAdminPayout(false)" class="w-full px-3 py-2 bg-slate-50 border rounded-lg font-bold text-slate-800">
               </div>
               <div>
                 <label class="block text-[11px] font-bold text-slate-600 mb-1">Těžké balíky nad 2 kg</label>
-                <input type="number" id="depoOver2" oninput="calculateAdminPayout()" class="w-full px-3 py-2 bg-slate-50 border rounded-lg font-bold text-slate-800">
+                <input type="number" id="depoOver2" oninput="calculateAdminPayout(false)" class="w-full px-3 py-2 bg-slate-50 border rounded-lg font-bold text-slate-800">
               </div>
               <div>
                 <label class="block text-[11px] font-bold text-slate-600 mb-1">Balíky do PS</label>
-                <input type="number" id="depoPS" oninput="calculateAdminPayout()" class="w-full px-3 py-2 bg-slate-50 border rounded-lg font-bold text-slate-800">
+                <input type="number" id="depoPS" oninput="calculateAdminPayout(false)" class="w-full px-3 py-2 bg-slate-50 border rounded-lg font-bold text-slate-800">
               </div>
               <div class="col-span-2">
                 <label class="block text-[11px] font-bold text-slate-600 mb-1">Echopaky</label>
-                <input type="number" id="depoEcho" oninput="calculateAdminPayout()" class="w-full px-3 py-2 bg-slate-50 border rounded-lg font-bold text-slate-800">
+                <input type="number" id="depoEcho" oninput="calculateAdminPayout(false)" class="w-full px-3 py-2 bg-slate-50 border rounded-lg font-bold text-slate-800">
               </div>
             </div>
 
@@ -481,23 +481,23 @@
               <div class="grid grid-cols-3 gap-2">
                 <div>
                   <span class="text-[10px] text-slate-500 block">Do 30 ks</span>
-                  <input type="number" id="depoP30" oninput="calculateAdminPayout()" class="w-full px-2 py-1.5 bg-slate-50 border rounded text-xs font-bold">
+                  <input type="number" id="depoP30" oninput="calculateAdminPayout(true)" class="w-full px-2 py-1.5 bg-slate-50 border rounded text-xs font-bold">
                 </div>
                 <div>
                   <span class="text-[10px] text-slate-500 block">Do 50 ks</span>
-                  <input type="number" id="depoP50" oninput="calculateAdminPayout()" class="w-full px-2 py-1.5 bg-slate-50 border rounded text-xs font-bold">
+                  <input type="number" id="depoP50" oninput="calculateAdminPayout(true)" class="w-full px-2 py-1.5 bg-slate-50 border rounded text-xs font-bold">
                 </div>
                 <div>
                   <span class="text-[10px] text-slate-500 block">Do 150 ks</span>
-                  <input type="number" id="depoP150" oninput="calculateAdminPayout()" class="w-full px-2 py-1.5 bg-slate-50 border rounded text-xs font-bold">
+                  <input type="number" id="depoP150" oninput="calculateAdminPayout(true)" class="w-full px-2 py-1.5 bg-slate-50 border rounded text-xs font-bold">
                 </div>
                 <div>
                   <span class="text-[10px] text-slate-500 block">Do 200 ks</span>
-                  <input type="number" id="depoP200" oninput="calculateAdminPayout()" class="w-full px-2 py-1.5 bg-slate-50 border rounded text-xs font-bold">
+                  <input type="number" id="depoP200" oninput="calculateAdminPayout(true)" class="w-full px-2 py-1.5 bg-slate-50 border rounded text-xs font-bold">
                 </div>
                 <div class="col-span-2">
                   <span class="text-[10px] text-slate-500 block">Nad 200 ks</span>
-                  <input type="number" id="depoPOver" oninput="calculateAdminPayout()" class="w-full px-2 py-1.5 bg-slate-50 border rounded text-xs font-bold">
+                  <input type="number" id="depoPOver" oninput="calculateAdminPayout(true)" class="w-full px-2 py-1.5 bg-slate-50 border rounded text-xs font-bold">
                 </div>
               </div>
             </div>
@@ -513,23 +513,31 @@
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="block text-[11px] font-bold text-slate-600 mb-1">Dovolená (dní)</label>
-                <input type="number" id="depoLeaveDays" oninput="calculateAdminPayout()" class="w-full px-3 py-2 bg-slate-50 border rounded-lg font-bold text-slate-800">
+                <input type="number" id="depoLeaveDays" oninput="calculateAdminPayout(false)" class="w-full px-3 py-2 bg-slate-50 border rounded-lg font-bold text-slate-800">
               </div>
               <div>
                 <label class="block text-[11px] font-bold text-slate-600 mb-1">Sazba za dovolenou (Kč/den)</label>
-                <input type="number" id="depoLeaveRate" value="1000" oninput="calculateAdminPayout()" class="w-full px-3 py-2 bg-slate-50 border rounded-lg font-bold text-slate-800">
+                <input type="number" id="depoLeaveRate" value="1000" oninput="calculateAdminPayout(false)" class="w-full px-3 py-2 bg-slate-50 border rounded-lg font-bold text-slate-800">
               </div>
             </div>
 
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="block text-[11px] font-bold text-emerald-700 mb-1">Bonusy celkem (+ Kč)</label>
-                <input type="number" id="depoBonus" placeholder="0" oninput="calculateAdminPayout()" class="w-full px-3 py-2 bg-slate-50 border rounded-lg font-bold text-emerald-700">
+                <input type="number" id="depoBonus" placeholder="0" oninput="calculateAdminPayout(false)" class="w-full px-3 py-2 bg-slate-50 border rounded-lg font-bold text-emerald-700">
               </div>
               <div>
                 <label class="block text-[11px] font-bold text-rose-700 mb-1">Pokuty / Srážky (- Kč)</label>
-                <input type="number" id="depoPenalty" placeholder="0" oninput="calculateAdminPayout()" class="w-full px-3 py-2 bg-slate-50 border rounded-lg font-bold text-rose-700">
+                <input type="number" id="depoPenalty" placeholder="0" oninput="calculateAdminPayout(false)" class="w-full px-3 py-2 bg-slate-50 border rounded-lg font-bold text-rose-700">
               </div>
+            </div>
+
+            <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs space-y-1">
+              <div class="flex justify-between items-center">
+                <span class="font-bold text-emerald-900 uppercase">Výkonnostní bonus (automaticky, lze upravit):</span>
+                <span class="whitespace-nowrap"><input type="number" id="depoPerfBonus" min="0" oninput="calculateAdminPayout(false)" class="w-24 px-2 py-1 bg-white border border-emerald-300 rounded text-right font-black text-emerald-700"> Kč</span>
+              </div>
+              <div id="depoPerfDetail" class="text-[11px] text-emerald-800"></div>
             </div>
 
             <div>
@@ -772,6 +780,58 @@
         <button onclick="savePricingForRoute()" class="w-full py-3 bg-[#001e50] hover:bg-[#002d78] text-[#ffd100] font-black uppercase tracking-wider rounded-xl shadow transition">
           Uložit obě cenové hladiny pro vybranou trasu
         </button>
+
+        <div class="p-4 bg-emerald-50/60 rounded-xl border border-emerald-200 space-y-4">
+          <h4 class="text-xs font-black uppercase text-emerald-900 tracking-wider border-b border-emerald-200 pb-2">3. Výkonnostní bonusy (platí pro všechny trasy)</h4>
+          <p class="text-[11px] text-emerald-800">Při uzávěrce se vypočtená částka uloží k dané trase a měsíci. Pozdější změna pravidel už uzavřené měsíce nemění. Platí nejvyšší dosažený stupeň, hranice je „nad“. Nevyplněný stupeň (0) se nepoužije.</p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-2">
+              <div class="text-[11px] font-black uppercase text-slate-600">Stopky za měsíc</div>
+              <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-700 mb-1">1. stupeň: nad (stopek)</label>
+              <input type="number" id="bonusStops1Over" min="0" class="w-full px-3 py-1.5 bg-white border rounded text-xs font-bold">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-700 mb-1">1. stupeň: bonus (Kč)</label>
+              <input type="number" id="bonusStops1Amt" min="0" class="w-full px-3 py-1.5 bg-white border rounded text-xs font-bold">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-700 mb-1">2. stupeň: nad (stopek)</label>
+              <input type="number" id="bonusStops2Over" min="0" class="w-full px-3 py-1.5 bg-white border rounded text-xs font-bold">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-700 mb-1">2. stupeň: bonus (Kč)</label>
+              <input type="number" id="bonusStops2Amt" min="0" class="w-full px-3 py-1.5 bg-white border rounded text-xs font-bold">
+            </div>
+              </div>
+            </div>
+            <div class="space-y-2">
+              <div class="text-[11px] font-black uppercase text-slate-600">Svezené balíky za měsíc</div>
+              <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-700 mb-1">1. stupeň: nad (ks)</label>
+              <input type="number" id="bonusPick1Over" min="0" class="w-full px-3 py-1.5 bg-white border rounded text-xs font-bold">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-700 mb-1">1. stupeň: bonus (Kč)</label>
+              <input type="number" id="bonusPick1Amt" min="0" class="w-full px-3 py-1.5 bg-white border rounded text-xs font-bold">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-700 mb-1">2. stupeň: nad (ks)</label>
+              <input type="number" id="bonusPick2Over" min="0" class="w-full px-3 py-1.5 bg-white border rounded text-xs font-bold">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-700 mb-1">2. stupeň: bonus (Kč)</label>
+              <input type="number" id="bonusPick2Amt" min="0" class="w-full px-3 py-1.5 bg-white border rounded text-xs font-bold">
+            </div>
+              </div>
+            </div>
+          </div>
+          <button onclick="savePerfRules()" class="w-full py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-black uppercase tracking-wider rounded-xl shadow transition text-xs">
+            Uložit pravidla bonusů (platí pro nové uzávěrky)
+          </button>
+        </div>
       </div>
     </div>
 
@@ -887,6 +947,35 @@
     const DEFAULT_INVOICE_PRICE = { stop: 26.0, under2: 2.0, over2: 10.0, ps: 10.0, echo: 8.0, p30: 10.0, p50: 8.0, p150: 6.0, p200: 4.0, pOver: 3.0 };
 
 
+    // Výkonnostní bonus: pravidla nastavuje správce (záložka Sazby), platí vždy nejvyšší dosažený stupeň, hranice je "nad".
+    const DEFAULT_PERF_RULES = {
+      stops:   [ { over: 1500, bonus: 500 }, { over: 1900, bonus: 1000 } ],
+      pickups: [ { over: 3500, bonus: 500 }, { over: 5000, bonus: 1000 } ]
+    };
+    let PERF_RULES = JSON.parse(JSON.stringify(DEFAULT_PERF_RULES));
+
+    function normalizePerfRules(r) {
+      const clean = tiers => (Array.isArray(tiers) ? tiers : [])
+        .map(t => ({ over: Number(t && t.over) || 0, bonus: Number(t && t.bonus) || 0 }));
+      return { stops: clean(r && r.stops), pickups: clean(r && r.pickups) };
+    }
+
+    function calcPerfBonus(stops, pickups) {
+      const pick = (tiers, v) => {
+        const valid = (tiers || []).filter(t => t.over > 0 && t.bonus > 0).sort((a, b) => b.over - a.over);
+        const hit = valid.find(t => v > t.over);
+        return hit ? hit.bonus : 0;
+      };
+      const st = pick(PERF_RULES.stops, stops);
+      const pu = pick(PERF_RULES.pickups, pickups);
+      return { stops: st, pickups: pu, total: st + pu };
+    }
+
+    // Bonus uzavřeného měsíce je uložený v uzávěrce (nemění se podle aktuálních pravidel)
+    function perfBonusFromSettlement(s) {
+      return Number(s && s.perfBonus) || 0;
+    }
+
     let PRICING_COURIER = {};
     let PRICING_INVOICE = {};
 
@@ -986,6 +1075,7 @@
             bonus: Number(st.bonus) || 0, penalty: Number(st.penalty) || 0,
             notes: st.notes || "",
             payHPP: Number(st.pay_hpp) || 0, payDPP: Number(st.pay_dpp) || 0,
+            perfBonus: Number(st.perf_bonus) || 0,
             locked: !!st.locked
           };
         });
@@ -995,6 +1085,15 @@
           id: l.id, type: l.type || 'LEAVE', route: String(l.route),
           start: l.start_date, end: l.end_date, days: l.days, note: l.note, status: l.status
         }));
+
+        if (isAdmin) {
+          try {
+            const rs = await sbCheck(supabaseClient.from('app_settings').select('*').eq('key', 'perf_bonus_rules'), 'app_settings');
+            if (rs && rs[0] && rs[0].value) PERF_RULES = normalizePerfRules(rs[0].value);
+          } catch (e) {
+            console.warn("Pravidla bonusů se nenačetla, platí výchozí:", e);
+          }
+        }
 
         lastLoad = Date.now();
         rebuildRouteDropdowns();
@@ -1024,7 +1123,7 @@
         p30: s.p30, p50: s.p50, p150: s.p150, p200: s.p200, pover: s.pOver,
         leave_days: s.leaveDays, leave_rate: s.leaveRate,
         bonus: s.bonus, penalty: s.penalty, notes: s.notes,
-        pay_hpp: s.payHPP, pay_dpp: s.payDPP, locked: s.locked,
+        pay_hpp: s.payHPP, pay_dpp: s.payDPP, perf_bonus: s.perfBonus, locked: s.locked,
         updated_at: new Date().toISOString()
       }, { onConflict: 'period,route' });
       if (error) { console.error("Chyba uložení uzávěrky:", error); throw error; }
@@ -1854,7 +1953,8 @@
                          (settle.p200 * (p.p200 ?? 1.0)) + 
                          (settle.pOver * (p.pOver ?? 1.0));
       const leavePay = (settle.leaveDays || 0) * (settle.leaveRate || 1000);
-      const finalTotal = baseEarned + leavePay + (settle.bonus || 0) - (settle.penalty || 0);
+      const perfBonus = perfBonusFromSettlement(settle);
+      const finalTotal = baseEarned + leavePay + perfBonus + (settle.bonus || 0) - (settle.penalty || 0);
       const rest = finalTotal - (settle.payHPP || 0) - (settle.payDPP || 0);
 
       box.innerHTML = `
@@ -1887,6 +1987,10 @@
             <div class="flex justify-between">
               <span>Dovolená (${settle.leaveDays || 0} dní):</span>
               <span class="font-bold">${formatMoney(leavePay)}</span>
+            </div>
+            <div class="flex justify-between text-emerald-700">
+              <span>Výkonnostní bonus:</span>
+              <span class="font-bold">+ ${formatMoney(perfBonus)}</span>
             </div>
             <div class="flex justify-between text-emerald-700">
               <span>Bonusy:</span>
@@ -1961,7 +2065,7 @@
                            (s.p150 * (p.p150 ?? 1.0)) + 
                            (s.p200 * (p.p200 ?? 1.0)) + 
                            (s.pOver * (p.pOver ?? 1.0));
-              courierPayout += base + ((s.leaveDays||0)*(s.leaveRate||1000)) + (s.bonus||0) - (s.penalty||0);
+              courierPayout += base + ((s.leaveDays||0)*(s.leaveRate||1000)) + perfBonusFromSettlement(s) + (s.bonus||0) - (s.penalty||0);
             } else {
               const mShifts = SHIFTS.filter(sh => {
                 const d = new Date(sh.date);
@@ -1993,7 +2097,7 @@
                          (s.p150 * (p.p150 ?? 1.0)) + 
                          (s.p200 * (p.p200 ?? 1.0)) + 
                          (s.pOver * (p.pOver ?? 1.0));
-            courierPayout = base + ((s.leaveDays||0)*(s.leaveRate||1000)) + (s.bonus||0) - (s.penalty||0);
+            courierPayout = base + ((s.leaveDays||0)*(s.leaveRate||1000)) + perfBonusFromSettlement(s) + (s.bonus||0) - (s.penalty||0);
             invoiceBase = calcInvoiceFromData(routeData, route);
           } else {
             isLocked = false;
@@ -2204,6 +2308,7 @@
 
       if (s) {
         document.getElementById("depoStops").value = s.stops || 0;
+        document.getElementById("depoPerfBonus").value = s.perfBonus || 0;
         document.getElementById("depoUnder2").value = s.under2 || 0;
         document.getElementById("depoOver2").value = s.over2 || 0;
         document.getElementById("depoPS").value = s.ps || 0;
@@ -2257,10 +2362,10 @@
         document.getElementById("depoPayHPP").value = 0;
         document.getElementById("depoPayDPP").value = 0;
       }
-      calculateAdminPayout();
+      calculateAdminPayout(!s);
     }
 
-    function calculateAdminPayout() {
+    function calculateAdminPayout(autoPerf) {
       const route = document.getElementById("settleRouteSelect").value;
       const p = PRICING_COURIER[route] || DEFAULT_COURIER_PRICE;
 
@@ -2291,7 +2396,17 @@
       const bonus = Number(document.getElementById("depoBonus").value) || 0;
       const penalty = Number(document.getElementById("depoPenalty").value) || 0;
 
-      const finalPayout = base + (leaveDays * leaveRate) + bonus - penalty;
+      const pickupsTotal = p30 + p50 + p150 + p200 + pOver;
+      const perf = calcPerfBonus(stops, pickupsTotal);
+      const perfInput = document.getElementById("depoPerfBonus");
+      if (autoPerf === true) perfInput.value = perf.total;
+      const perfValue = Math.max(0, Number(perfInput.value) || 0);
+      const nf = n => Number(n).toLocaleString('cs-CZ');
+      document.getElementById("depoPerfDetail").innerText =
+        `Podle aktuálních pravidel: Stopky ${nf(stops)}: ` + (perf.stops ? `+${nf(perf.stops)} Kč` : 'bez bonusu') +
+        ` | Svozy ${nf(pickupsTotal)} ks: ` + (perf.pickups ? `+${nf(perf.pickups)} Kč` : 'bez bonusu');
+
+      const finalPayout = base + (leaveDays * leaveRate) + bonus + perfValue - penalty;
       document.getElementById("depoBaseTotal").innerText = formatMoney(base);
       document.getElementById("depoFinalPayout").innerText = formatMoney(finalPayout);
       calculatePayoutRest();
@@ -2332,6 +2447,7 @@
         notes: document.getElementById("depoNotes").value || "",
         payHPP: Number(document.getElementById("depoPayHPP").value) || 0,
         payDPP: Number(document.getElementById("depoPayDPP").value) || 0,
+        perfBonus: Math.max(0, Number(document.getElementById("depoPerfBonus").value) || 0),
         locked: true
       };
 
@@ -2352,7 +2468,36 @@
       renderCurrentView();
     }
 
+    function fillPerfRulesForm() {
+      const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+      [["bonusStops", PERF_RULES.stops], ["bonusPick", PERF_RULES.pickups]].forEach(([pre, tiers]) => {
+        for (let k = 1; k <= 2; k++) {
+          const t = (tiers && tiers[k - 1]) || { over: 0, bonus: 0 };
+          set(pre + k + "Over", t.over || 0);
+          set(pre + k + "Amt", t.bonus || 0);
+        }
+      });
+    }
+
+    async function savePerfRules() {
+      if (!realAdminLogged) return;
+      const val = id => Math.max(0, Number(document.getElementById(id).value) || 0);
+      const rules = {
+        stops:   [1, 2].map(k => ({ over: val("bonusStops" + k + "Over"), bonus: val("bonusStops" + k + "Amt") })),
+        pickups: [1, 2].map(k => ({ over: val("bonusPick" + k + "Over"), bonus: val("bonusPick" + k + "Amt") }))
+      };
+      try {
+        await sbCheck(supabaseClient.from('app_settings').upsert({ key: 'perf_bonus_rules', value: rules }, { onConflict: 'key' }), 'app_settings');
+      } catch (e) {
+        return alert("Pravidla se nepodařilo uložit: " + e.message);
+      }
+      PERF_RULES = normalizePerfRules(rules);
+      alert("Pravidla bonusů byla uložena. Použijí se při nových uzávěrkách, uzavřené měsíce se nemění.");
+      renderCurrentView();
+    }
+
     function loadPricingForRoute() {
+      fillPerfRulesForm();
       const route = document.getElementById("pricingRouteSelect").value;
       const c = PRICING_COURIER[route] || DEFAULT_COURIER_PRICE;
       const inv = PRICING_INVOICE[route] || DEFAULT_INVOICE_PRICE;
