@@ -940,7 +940,7 @@
 
         const { data: cData } = await supabaseClient.from('couriers').select('*').order('route');
         if (cData && cData.length > 0) {
-          ROUTES_CONFIG = cData;
+          ROUTES_CONFIG = cData.map(c => ({ ...c, route: String(c.route) }));
         } else {
           ROUTES_CONFIG = [...DEFAULT_ROUTES];
           for (const routeObj of DEFAULT_ROUTES) {
@@ -954,7 +954,7 @@
         if (sData) {
           SHIFTS = sData.map(s => ({
             date: s.date,
-            route: s.route,
+            route: String(s.route),
             stops: Number(s.stops) || 0,
             under2: Number(s.under2) || 0,
             over2: Number(s.over2) || 0,
@@ -973,7 +973,7 @@
           SETTLEMENTS = {};
           settsData.forEach(st => {
             if (!SETTLEMENTS[st.period]) SETTLEMENTS[st.period] = {};
-            SETTLEMENTS[st.period][st.route] = {
+            SETTLEMENTS[st.period][String(st.route)] = {
               stops: Number(st.stops) || 0,
               under2: Number(st.under2) || 0,
               over2: Number(st.over2) || 0,
@@ -1001,7 +1001,7 @@
           LEAVES = lData.map(l => ({
             id: l.id,
             type: l.type || 'LEAVE',
-            route: l.route,
+            route: String(l.route),
             start: l.start_date,
             end: l.end_date,
             days: l.days,
@@ -1018,7 +1018,7 @@
 
     async function syncShiftToDb(shift) {
       if (!supabaseClient) return;
-      await supabaseClient.from('daily_shifts').upsert({
+      const { error } = await supabaseClient.from('daily_shifts').upsert({
         date: shift.date,
         route: shift.route,
         stops: shift.stops,
@@ -1030,13 +1030,14 @@
         p50: shift.p50,
         p150: shift.p150,
         p200: shift.p200,
-        pOver: shift.pOver
+        pover: shift.pOver
       }, { onConflict: 'date,route' });
+      if (error) { console.error("Chyba uložení směny:", error); throw error; }
     }
 
     async function syncSettlementToDb(period, route, s) {
       if (!supabaseClient) return;
-      await supabaseClient.from('settlements').upsert({
+      const { error } = await supabaseClient.from('settlements').upsert({
         period: period,
         route: route,
         stops: s.stops,
@@ -1048,7 +1049,7 @@
         p50: s.p50,
         p150: s.p150,
         p200: s.p200,
-        pOver: s.pOver,
+        pover: s.pOver,
         leave_days: s.leaveDays,
         leave_rate: s.leaveRate,
         bonus: s.bonus,
@@ -1058,6 +1059,7 @@
         pay_dpp: s.payDPP,
         locked: s.locked
       }, { onConflict: 'period,route' });
+      if (error) { console.error("Chyba uložení uzávěrky:", error); throw error; }
     }
 
     async function syncCourierConfig(c) {
@@ -1195,6 +1197,7 @@
       }
 
       if (currentUser.role === "ADMIN") {
+        initSupabaseData();
         document.getElementById("adminNav").classList.remove("hidden");
         document.getElementById("courierNav").classList.add("hidden");
         switchTab("adminOverview");
@@ -1228,6 +1231,7 @@
     }
 
     function switchTab(tabId) {
+      if (currentUser && currentUser.role === "ADMIN" && (tabId === "adminOverview" || tabId === "adminSettlement")) initSupabaseData();
       document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
       const target = document.getElementById(tabId);
       if (target) target.classList.add("active");
@@ -1438,7 +1442,11 @@
       if (index >= 0) SHIFTS[index] = shiftData;
       else SHIFTS.push(shiftData);
 
-      await syncShiftToDb(shiftData);
+      try {
+        await syncShiftToDb(shiftData);
+      } catch (e) {
+        return alert("POZOR: směna se NEULOŽILA do databáze: " + (e.message || e));
+      }
       alert("Směna byla uložena a synchronizována do databáze!");
       renderCurrentView();
     }
@@ -2329,7 +2337,11 @@
       };
 
       SETTLEMENTS[key][route] = sData;
-      await syncSettlementToDb(key, route, sData);
+      try {
+        await syncSettlementToDb(key, route, sData);
+      } catch (e) {
+        return alert("POZOR: uzávěrka se NEULOŽILA do databáze: " + (e.message || e));
+      }
       alert(`Uzávěrka pro trasu ${route} byla uložena a uzamčena v databázi!`);
       renderCurrentView();
     }
