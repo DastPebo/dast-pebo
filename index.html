@@ -1365,6 +1365,7 @@
     function calcCourierShiftPay(shift, route) {
       const p = PRICING_COURIER[route] || DEFAULT_COURIER_PRICE;
       return ((shift.stops || 0) * (p.stop ?? 15.0)) + 
+             ((shift.under2 || 0) * (p.under2 ?? 1.0)) + 
              ((shift.over2 || 0) * (p.over2 ?? 1.0)) + 
              ((shift.ps || 0) * (p.ps ?? 3.0)) + 
              ((shift.echo || 0) * (p.echo ?? 2.0)) +
@@ -2019,4 +2020,411 @@
         const invoiceWithVat = invoiceBase * 1.21;
         const difference = invoiceWithVat - courierPayout;
 
-        grand
+        grandStops += routeData.stops;
+        grandPackages += totalPack;
+        grandPickups += totalPickup;
+        grandInvoiceWithVat += invoiceWithVat;
+        grandPayout += courierPayout;
+
+        html += `
+          <tr class="hover:bg-slate-50">
+            <td class="py-2.5 px-3 font-black text-slate-800 whitespace-nowrap">Trasa ${route}</td>
+            <td class="py-2.5 px-3 font-bold whitespace-nowrap">${routeData.stops}</td>
+            <td class="py-2.5 px-3 whitespace-nowrap">${routeData.under2}</td>
+            <td class="py-2.5 px-3 whitespace-nowrap">${routeData.over2}</td>
+            <td class="py-2.5 px-3 whitespace-nowrap">${routeData.ps}</td>
+            <td class="py-2.5 px-3 whitespace-nowrap">${totalPickup} ks</td>
+            <td class="py-2.5 px-3 text-right font-black text-[#001e50] bg-blue-50/40 whitespace-nowrap">${formatMoney(courierPayout)}</td>
+            <td class="py-2.5 px-3 text-right text-emerald-800 font-black whitespace-nowrap bg-emerald-50/40">${formatMoney(invoiceWithVat)}</td>
+            <td class="py-2.5 px-3 text-right font-black whitespace-nowrap bg-amber-50/60 ${difference >= 0 ? 'text-blue-900' : 'text-rose-600'}">${formatMoney(difference)}</td>
+            <td class="py-2.5 px-3 text-center whitespace-nowrap">
+              ${isLocked
+                ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">Uzavřeno</span>`
+                : `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">Otevřeno</span>`}
+            </td>
+          </tr>
+        `;
+      });
+
+      document.getElementById("adminSummaryRows").innerHTML = html;
+      document.getElementById("adminTotalStops").innerText = grandStops;
+      document.getElementById("adminTotalPackages").innerText = grandPackages;
+      document.getElementById("adminTotalPickups").innerText = grandPickups + " ks";
+      document.getElementById("adminTotalInvoiceVat").innerText = formatMoney(grandInvoiceWithVat);
+      document.getElementById("adminTotalPayout").innerText = formatMoney(grandPayout);
+      document.getElementById("adminGrossProfit").innerText = "Zůstatek: " + formatMoney(grandInvoiceWithVat - grandPayout);
+    }
+
+    async function saveAdminPassword() {
+      const p = document.getElementById("adminNewPassword").value.trim();
+      if (!p) return alert("Zadejte nové heslo správce!");
+      ADMIN_CONFIG.password = p;
+      try {
+        await syncAdminPassword(p);
+      } catch (e) {
+        console.warn("Chyba synchronizace se Supabase, uloženo v paměti.");
+      }
+      alert("Heslo správce bylo úspěšně změněno!");
+      document.getElementById("adminNewPassword").value = "";
+    }
+
+    function renderCourierManagement() {
+      const tableBody = document.getElementById("courierManagementTable");
+      if (!tableBody) return;
+      const html = ROUTES_CONFIG.map(r => `
+        <tr class="hover:bg-slate-50 ${!r.active ? 'opacity-50 bg-slate-100' : ''}">
+          <td class="py-2.5 px-3 font-black text-slate-800">Trasa ${r.route}</td>
+          <td class="py-2.5 px-3">
+            <input type="text" id="name_${r.route}" value="${r.name}" class="px-2 py-1 bg-white border border-slate-300 rounded font-bold text-xs w-36 outline-none focus:ring-1 focus:ring-[#001e50]">
+          </td>
+          <td class="py-2.5 px-3">
+            <input type="email" id="email_${r.route}" value="${r.email}" class="px-2 py-1 bg-white border border-slate-300 rounded text-xs w-48 outline-none focus:ring-1 focus:ring-[#001e50]">
+          </td>
+          <td class="py-2.5 px-3">
+            <input type="text" id="pass_${r.route}" value="${r.password}" class="px-2 py-1 bg-white border border-slate-300 rounded text-xs font-mono font-bold w-28 outline-none focus:ring-1 focus:ring-[#001e50]">
+          </td>
+          <td class="py-2.5 px-3 text-center">
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${r.active ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'}">
+              ${r.active ? 'Aktivní' : 'Archivováno'}
+            </span>
+          </td>
+          <td class="py-2.5 px-3 text-right space-x-1.5">
+            <button onclick="saveCourierRow('${r.route}')" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded font-bold text-[10px] shadow-sm inline-flex items-center gap-1">
+              <i data-lucide="check" class="w-3 h-3"></i> Uložit
+            </button>
+            <button onclick="replaceCourier('${r.route}')" class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded font-bold text-[10px]">Nahradit</button>
+            <button onclick="toggleRouteArchive('${r.route}')" class="px-2 py-1 ${r.active ? 'bg-slate-700 hover:bg-slate-800' : 'bg-emerald-600 hover:bg-emerald-700'} text-white rounded font-bold text-[10px]">
+              ${r.active ? 'Archivovat' : 'Obnovit'}
+            </button>
+          </td>
+        </tr>
+      `).join("");
+      tableBody.innerHTML = html;
+      lucide.createIcons();
+    }
+
+    async function saveCourierRow(route) {
+      const item = ROUTES_CONFIG.find(r => r.route === route);
+      if (!item) return;
+      const newName = document.getElementById("name_" + route).value.trim();
+      const newEmail = document.getElementById("email_" + route).value.trim();
+      const newPass = document.getElementById("pass_" + route).value.trim();
+
+      if (!newName || !newPass) return alert("Jméno i heslo musí být vyplněné!");
+
+      item.name = newName;
+      item.email = newEmail;
+      item.password = newPass;
+
+      rebuildRouteDropdowns();
+      try {
+        await syncCourierConfig(item);
+      } catch (e) {
+        console.warn("Chyba synchronizace, uloženo v paměti.");
+      }
+      alert(`Změny pro trasu ${route} byly úspěšně uloženy!`);
+      renderCurrentView();
+    }
+
+    async function replaceCourier(route) {
+      const item = ROUTES_CONFIG.find(r => r.route === route);
+      if (!item) return;
+      const newName = prompt(`Zadejte jméno nového kurýra pro trasu ${route}:`, "");
+      if (!newName) return;
+      const newPass = prompt(`Zadejte heslo pro nového kurýra:`, "kuryr");
+      if (!newPass) return;
+      
+      item.name = newName;
+      item.password = newPass;
+      rebuildRouteDropdowns();
+      try {
+        await syncCourierConfig(item);
+      } catch (e) {
+        console.warn("Chyba synchronizace, uloženo v paměti.");
+      }
+      alert(`Kurýr na trase ${route} byl změněn na: ${newName}`);
+      renderCurrentView();
+    }
+
+    async function toggleRouteArchive(route) {
+      const item = ROUTES_CONFIG.find(r => r.route === route);
+      if (item) {
+        item.active = !item.active;
+        rebuildRouteDropdowns();
+        try {
+          await syncCourierConfig(item);
+        } catch (e) {
+          console.warn("Chyba synchronizace, uloženo v paměti.");
+        }
+        renderCurrentView();
+      }
+    }
+
+    async function addNewRoutePrompt() {
+      const newRoute = prompt("Zadejte číslo nové trasy (např. 72088):", "");
+      if (!newRoute) return;
+      if (ROUTES_CONFIG.some(r => r.route === newRoute)) return alert("Tato trasa již existuje!");
+
+      const newName = prompt("Zadejte jméno kurýra:", "Nový kurýr");
+      const newPass = prompt("Zadejte heslo pro kurýra:", "kuryr");
+
+      const newObj = {
+        route: newRoute,
+        name: newName || ("Kurýr " + newRoute),
+        email: `kuryr${newRoute}@dastpebo.cz`,
+        password: newPass || "kuryr",
+        active: true
+      };
+      ROUTES_CONFIG.push(newObj);
+
+      PRICING_COURIER[newRoute] = { ...DEFAULT_COURIER_PRICE };
+      PRICING_INVOICE[newRoute] = { ...DEFAULT_INVOICE_PRICE };
+
+      rebuildRouteDropdowns();
+      try {
+        await syncCourierConfig(newObj);
+        await syncPricingToDb();
+      } catch (e) {
+        console.warn("Chyba synchronizace, uloženo v paměti.");
+      }
+      alert(`Trasa ${newRoute} byla vytvořena a uložena! Nyní se pod ní můžete rovnou přihlásit.`);
+      renderCurrentView();
+    }
+
+    function loadSettlementForEdit() {
+      const monthVal = document.getElementById("selectedMonth").value;
+      const month = (monthVal === "ALL") ? 1 : Number(monthVal);
+      const year = document.getElementById("selectedYear").value;
+      const route = document.getElementById("settleRouteSelect").value;
+      const key = `${year}-${month}`;
+      const s = SETTLEMENTS[key]?.[route];
+
+      if (s) {
+        document.getElementById("depoStops").value = s.stops || 0;
+        document.getElementById("depoOver2").value = s.over2 || 0;
+        document.getElementById("depoPS").value = s.ps || 0;
+        document.getElementById("depoEcho").value = s.echo || 0;
+        document.getElementById("depoP30").value = s.p30 || 0;
+        document.getElementById("depoP50").value = s.p50 || 0;
+        document.getElementById("depoP150").value = s.p150 || 0;
+        document.getElementById("depoP200").value = s.p200 || 0;
+        document.getElementById("depoPOver").value = s.pOver || 0;
+        document.getElementById("depoLeaveDays").value = s.leaveDays || 0;
+        document.getElementById("depoLeaveRate").value = s.leaveRate || 1000;
+        document.getElementById("depoBonus").value = s.bonus || 0;
+        document.getElementById("depoPenalty").value = s.penalty || 0;
+        document.getElementById("depoNotes").value = s.notes || "";
+        document.getElementById("depoPayHPP").value = s.payHPP || 0;
+        document.getElementById("depoPayDPP").value = s.payDPP || 0;
+      } else {
+        const mShifts = SHIFTS.filter(sh => {
+          const d = new Date(sh.date);
+          return d.getFullYear() == year && (d.getMonth() + 1) == month && sh.route === route;
+        });
+        let sumStops=0, sumOver=0, sumPS=0, sumEcho=0, sum30=0, sum50=0, sum150=0, sum200=0, sumOverP=0;
+        mShifts.forEach(sh => {
+          sumStops += sh.stops || 0; sumOver += sh.over2 || 0; sumPS += sh.ps || 0; sumEcho += sh.echo || 0;
+          sum30 += sh.p30 || 0; sum50 += sh.p50 || 0; sum150 += sh.p150 || 0; sum200 += sh.p200 || 0; sumOverP += sh.pOver || 0;
+        });
+
+        document.getElementById("depoStops").value = sumStops;
+        document.getElementById("depoOver2").value = sumOver;
+        document.getElementById("depoPS").value = sumPS;
+        document.getElementById("depoEcho").value = sumEcho;
+        document.getElementById("depoP30").value = sum30;
+        document.getElementById("depoP50").value = sum50;
+        document.getElementById("depoP150").value = sum150;
+        document.getElementById("depoP200").value = sum200;
+        document.getElementById("depoPOver").value = sumOverP;
+        
+        const mLeavesCount = LEAVES.filter(l => {
+          if (l.route !== route || l.status !== "APPROVED" || l.type === "EVENT") return false;
+          if (!l.note.includes("[Placené]")) return false;
+          const [ly, lm, ld] = l.start.split("-");
+          return Number(ly) == year && Number(lm) == month;
+        }).reduce((acc, l) => acc + l.days, 0);
+
+        document.getElementById("depoLeaveDays").value = mLeavesCount;
+        document.getElementById("depoLeaveRate").value = 1000;
+        document.getElementById("depoBonus").value = 0;
+        document.getElementById("depoPenalty").value = 0;
+        document.getElementById("depoNotes").value = "";
+        document.getElementById("depoPayHPP").value = 0;
+        document.getElementById("depoPayDPP").value = 0;
+      }
+      calculateAdminPayout();
+    }
+
+    function calculateAdminPayout() {
+      const route = document.getElementById("settleRouteSelect").value;
+      const p = PRICING_COURIER[route] || DEFAULT_COURIER_PRICE;
+
+      const stops = Number(document.getElementById("depoStops").value) || 0;
+      const over2 = Number(document.getElementById("depoOver2").value) || 0;
+      const ps = Number(document.getElementById("depoPS").value) || 0;
+      const echo = Number(document.getElementById("depoEcho").value) || 0;
+      const p30 = Number(document.getElementById("depoP30").value) || 0;
+      const p50 = Number(document.getElementById("depoP50").value) || 0;
+      const p150 = Number(document.getElementById("depoP150").value) || 0;
+      const p200 = Number(document.getElementById("depoP200").value) || 0;
+      const pOver = Number(document.getElementById("depoPOver").value) || 0;
+
+      const base = (stops * (p.stop ?? 15.0)) + 
+                   (over2 * (p.over2 ?? 1.0)) + 
+                   (ps * (p.ps ?? 3.0)) + 
+                   (echo * (p.echo ?? 2.0)) +
+                   (p30 * (p.p30 ?? 2.0)) + 
+                   (p50 * (p.p50 ?? 1.5)) + 
+                   (p150 * (p.p150 ?? 1.0)) + 
+                   (p200 * (p.p200 ?? 1.0)) + 
+                   (pOver * (p.pOver ?? 1.0));
+
+      const leaveDays = Number(document.getElementById("depoLeaveDays").value) || 0;
+      const leaveRate = Number(document.getElementById("depoLeaveRate").value) || 1000;
+      const bonus = Number(document.getElementById("depoBonus").value) || 0;
+      const penalty = Number(document.getElementById("depoPenalty").value) || 0;
+
+      const finalPayout = base + (leaveDays * leaveRate) + bonus - penalty;
+      document.getElementById("depoBaseTotal").innerText = formatMoney(base);
+      document.getElementById("depoFinalPayout").innerText = formatMoney(finalPayout);
+      calculatePayoutRest();
+    }
+
+    function calculatePayoutRest() {
+      const finalPayoutStr = document.getElementById("depoFinalPayout").innerText.replace(/[^0-9,-]/g, '').replace(',', '.');
+      const finalPayout = Number(finalPayoutStr) || 0;
+      const hpp = Number(document.getElementById("depoPayHPP").value) || 0;
+      const dpp = Number(document.getElementById("depoPayDPP").value) || 0;
+      document.getElementById("depoPayRest").innerText = formatMoney(finalPayout - hpp - dpp);
+    }
+
+    async function saveSettlement() {
+      const monthVal = document.getElementById("selectedMonth").value;
+      const month = (monthVal === "ALL") ? 1 : Number(monthVal);
+      const year = document.getElementById("selectedYear").value;
+      const route = document.getElementById("settleRouteSelect").value;
+      const key = `${year}-${month}`;
+
+      if (!SETTLEMENTS[key]) SETTLEMENTS[key] = {};
+
+      const sData = {
+        stops: Number(document.getElementById("depoStops").value) || 0,
+        under2: 0,
+        over2: Number(document.getElementById("depoOver2").value) || 0,
+        ps: Number(document.getElementById("depoPS").value) || 0,
+        echo: Number(document.getElementById("depoEcho").value) || 0,
+        p30: Number(document.getElementById("depoP30").value) || 0,
+        p50: Number(document.getElementById("depoP50").value) || 0,
+        p150: Number(document.getElementById("depoP150").value) || 0,
+        p200: Number(document.getElementById("depoP200").value) || 0,
+        pOver: Number(document.getElementById("depoPOver").value) || 0,
+        leaveDays: Number(document.getElementById("depoLeaveDays").value) || 0,
+        leaveRate: Number(document.getElementById("depoLeaveRate").value) || 1000,
+        bonus: Number(document.getElementById("depoBonus").value) || 0,
+        penalty: Number(document.getElementById("depoPenalty").value) || 0,
+        notes: document.getElementById("depoNotes").value || "",
+        payHPP: Number(document.getElementById("depoPayHPP").value) || 0,
+        payDPP: Number(document.getElementById("depoPayDPP").value) || 0,
+        locked: true
+      };
+
+      SETTLEMENTS[key][route] = sData;
+      await syncSettlementToDb(key, route, sData);
+      alert(`Uzávěrka pro trasu ${route} byla uložena a uzamčena v databázi!`);
+      renderCurrentView();
+    }
+
+    function loadPricingForRoute() {
+      const route = document.getElementById("pricingRouteSelect").value;
+      const c = PRICING_COURIER[route] || DEFAULT_COURIER_PRICE;
+      const inv = PRICING_INVOICE[route] || DEFAULT_INVOICE_PRICE;
+
+      document.getElementById("rateStop").value = c.stop;
+      document.getElementById("rateOver2").value = c.over2;
+      document.getElementById("ratePS").value = c.ps;
+      document.getElementById("rateEcho").value = c.echo;
+      document.getElementById("rateP30").value = c.p30;
+      document.getElementById("rateP50").value = c.p50;
+      document.getElementById("rateP150").value = c.p150;
+      document.getElementById("rateP200").value = c.p200;
+      document.getElementById("ratePOver").value = c.pOver;
+
+      document.getElementById("invStop").value = inv.stop;
+      document.getElementById("invUnder2").value = inv.under2;
+      document.getElementById("invOver2").value = inv.over2;
+      document.getElementById("invPS").value = inv.ps;
+      document.getElementById("invEcho").value = inv.echo;
+      document.getElementById("invP30").value = inv.p30;
+      document.getElementById("invP50").value = inv.p50;
+      document.getElementById("invP150").value = inv.p150;
+      document.getElementById("invP200").value = inv.p200;
+      document.getElementById("invPOver").value = inv.pOver;
+    }
+
+    async function savePricingForRoute() {
+      const route = document.getElementById("pricingRouteSelect").value;
+      PRICING_COURIER[route] = {
+        stop: Number(document.getElementById("rateStop").value) || 15.0,
+        over2: Number(document.getElementById("rateOver2").value) || 1.0,
+        ps: Number(document.getElementById("ratePS").value) || 3.0,
+        echo: Number(document.getElementById("rateEcho").value) || 2.0,
+        p30: Number(document.getElementById("rateP30").value) || 2.0,
+        p50: Number(document.getElementById("rateP50").value) || 1.5,
+        p150: Number(document.getElementById("rateP150").value) || 1.0,
+        p200: Number(document.getElementById("rateP200").value) || 1.0,
+        pOver: Number(document.getElementById("ratePOver").value) || 1.0
+      };
+
+      PRICING_INVOICE[route] = {
+        stop: Number(document.getElementById("invStop").value) || 38.0,
+        under2: Number(document.getElementById("invUnder2").value) || 8.0,
+        over2: Number(document.getElementById("invOver2").value) || 12.0,
+        ps: Number(document.getElementById("invPS").value) || 14.0,
+        echo: Number(document.getElementById("invEcho").value) || 5.0,
+        p30: Number(document.getElementById("invP30").value) || 3.5,
+        p50: Number(document.getElementById("invP50").value) || 2.8,
+        p150: Number(document.getElementById("invP150").value) || 2.2,
+        p200: Number(document.getElementById("invP200").value) || 2.0,
+        pOver: Number(document.getElementById("invPOver").value) || 1.8
+      };
+
+      await syncPricingToDb();
+      alert(`Sazby pro trasu ${route} byly uloženy do databáze!`);
+      renderCurrentView();
+    }
+
+    function downloadCSVBackup() {
+      let csv = "Datum;Trasa;Stopky;Lehke_baliky;Těžké_baliky;ParcelShop;Echopaky;Svoz_do_30;Svoz_do_50;Svoz_do_150;Svoz_do_200;Svoz_nad_200\n";
+      SHIFTS.forEach(s => {
+        csv += `${s.date};${s.route};${s.stops};${s.under2};${s.over2};${s.ps};${s.echo};${s.p30};${s.p50};${s.p150};${s.p200};${s.pOver}\n`;
+      });
+      downloadFile(csv, "DAST_PEBO_Smeny.csv", "text/csv;charset=utf-8;");
+    }
+
+    function downloadJSONBackup() {
+      const data = { adminConfig: ADMIN_CONFIG, routesConfig: ROUTES_CONFIG, pricingCourier: PRICING_COURIER, pricingInvoice: PRICING_INVOICE, shifts: SHIFTS, settlements: SETTLEMENTS, leaves: LEAVES };
+      downloadFile(JSON.stringify(data, null, 2), "DAST_PEBO_Zaloha.json", "application/json");
+    }
+
+    function downloadFile(content, fileName, mimeType) {
+      const blob = new Blob([content], { type: mimeType });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    function formatMoney(num) {
+      return (Number(num) || 0).toLocaleString('cs-CZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " Kč";
+    }
+
+    function formatDateCz(dateStr) {
+      if (!dateStr) return "";
+      const [y, m, d] = dateStr.split("-");
+      return `${Number(d)}.${Number(m)}.${y}`;
+    }
+  </script>
+</body>
+</html>
