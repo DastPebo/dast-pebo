@@ -576,7 +576,7 @@
               <button onclick="openAdminCreateLeaveModal()" class="px-3.5 py-2 bg-[#001e50] hover:bg-[#002d78] text-[#ffd100] rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow transition">
                 <i data-lucide="plus-circle" class="w-4 h-4"></i> Zadat událost / výpomoc / volno
               </button>
-              <button onclick="sendSummaryEmail()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow transition">
+              <button onclick="sendSummaryEmail()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 shadow transition">
                 <i data-lucide="mail" class="w-4 h-4"></i> Odeslat docházku
               </button>
             </div>
@@ -1147,7 +1147,7 @@
       const usernameInput = document.getElementById("loginUsername").value.trim().toLowerCase();
       const pass = document.getElementById("loginPassword").value;
 
-      if (!usernameInput) return alert("Zadejte přihlašovací jméno nebo číslo trasy!");
+      if (!usernameInput) return alert("Zadejte přihlašovací jméno nebo číslo trasa!");
 
       if (usernameInput === "admin" || usernameInput === ADMIN_CONFIG.email.toLowerCase()) {
         if (pass !== ADMIN_CONFIG.password) return alert("Špatné heslo pro správce!");
@@ -1909,7 +1909,7 @@
       lucide.createIcons();
     }
 
-    // OPRAVENO: PŘÍMÉ ČTENÍ Z DATOVÝCH SMĚN KURÝRŮ V OTEVŘENÉM MĚSÍCI
+    // ADMINISTRÁTORSKÝ PŘEHLED MEZD A FAKTURACE (OPRAVENO PRO ČTENÍ DENNÍCH SMĚN)
     function renderAdminSummary() {
       const month = document.getElementById("selectedMonth").value;
       const year = document.getElementById("selectedYear").value;
@@ -2316,6 +2316,65 @@
       SETTLEMENTS[key][route] = sData;
       await syncSettlementToDb(key, route, sData);
       alert(`Uzávěrka pro trasu ${route} byla uložena a uzamčena v databázi!`);
+      renderCurrentView();
+    }
+
+    function loadPricingForRoute() {
+      const route = document.getElementById("pricingRouteSelect").value;
+      const c = PRICING_COURIER[route] || DEFAULT_COURIER_PRICE;
+      const inv = PRICING_INVOICE[route] || DEFAULT_INVOICE_PRICE;
+
+      document.getElementById("rateStop").value = c.stop;
+      document.getElementById("rateOver2").value = c.over2;
+      document.getElementById("ratePS").value = c.ps;
+      document.getElementById("rateEcho").value = c.echo;
+      document.getElementById("rateP30").value = c.p30;
+      document.getElementById("rateP50").value = c.p50;
+      document.getElementById("rateP150").value = c.p150;
+      document.getElementById("rateP200").value = c.p200;
+      document.getElementById("ratePOver").value = c.pOver;
+
+      document.getElementById("invStop").value = inv.stop;
+      document.getElementById("invUnder2").value = inv.under2;
+      document.getElementById("invOver2").value = inv.over2;
+      document.getElementById("invPS").value = inv.ps;
+      document.getElementById("invEcho").value = inv.echo;
+      document.getElementById("invP30").value = inv.p30;
+      document.getElementById("invP50").value = inv.p50;
+      document.getElementById("invP150").value = inv.p150;
+      document.getElementById("invP200").value = inv.p200;
+      document.getElementById("invPOver").value = inv.pOver;
+    }
+
+    async function savePricingForRoute() {
+      const route = document.getElementById("pricingRouteSelect").value;
+      PRICING_COURIER[route] = {
+        stop: Number(document.getElementById("rateStop").value) || 15.0,
+        over2: Number(document.getElementById("rateOver2").value) || 1.0,
+        ps: Number(document.getElementById("ratePS").value) || 3.0,
+        echo: Number(document.getElementById("rateEcho").value) || 2.0,
+        p30: Number(document.getElementById("rateP30").value) || 2.0,
+        p50: Number(document.getElementById("rateP50").value) || 1.5,
+        p150: Number(document.getElementById("rateP150").value) || 1.0,
+        p200: Number(document.getElementById("rateP200").value) || 1.0,
+        pOver: Number(document.getElementById("ratePOver").value) || 1.0
+      };
+
+      PRICING_INVOICE[route] = {
+        stop: Number(document.getElementById("invStop").value) || 38.0,
+        under2: Number(document.getElementById("invUnder2").value) || 8.0,
+        over2: Number(document.getElementById("invOver2").value) || 12.0,
+        ps: Number(document.getElementById("invPS").value) || 14.0,
+        echo: Number(document.getElementById("invEcho").value) || 5.0,
+        p30: Number(document.getElementById("invP30").value) || 3.5,
+        p50: Number(document.getElementById("invP50").value) || 2.8,
+        p150: Number(document.getElementById("invP150").value) || 2.2,
+        p200: Number(document.getElementById("invP200").value) || 2.0,
+        pOver: Number(document.getElementById("invPOver").value) || 1.8
+      };
+
+      await syncPricingToDb();
+      alert(`Sazby pro trasu ${route} byly uloženy do databáze!`);
       renderCurrentView();
     }
 
