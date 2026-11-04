@@ -459,6 +459,10 @@
                 <input type="number" id="depoStops" oninput="calculateAdminPayout()" class="w-full px-3 py-2 bg-slate-50 border rounded-lg font-bold text-slate-800">
               </div>
               <div>
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">Lehké balíky do 2 kg</label>
+                <input type="number" id="depoUnder2" oninput="calculateAdminPayout()" class="w-full px-3 py-2 bg-slate-50 border rounded-lg font-bold text-slate-800">
+              </div>
+              <div>
                 <label class="block text-[11px] font-bold text-slate-600 mb-1">Těžké balíky nad 2 kg</label>
                 <input type="number" id="depoOver2" oninput="calculateAdminPayout()" class="w-full px-3 py-2 bg-slate-50 border rounded-lg font-bold text-slate-800">
               </div>
@@ -700,6 +704,10 @@
                 <input type="number" id="rateStop" step="0.5" class="w-full px-3 py-1.5 bg-white border rounded text-xs font-bold">
               </div>
               <div>
+                <label class="block text-[11px] font-bold text-slate-700 mb-1">Balík do 2 kg (Kč)</label>
+                <input type="number" id="rateUnder2" step="0.5" class="w-full px-3 py-1.5 bg-white border rounded text-xs font-bold">
+              </div>
+              <div>
                 <label class="block text-[11px] font-bold text-slate-700 mb-1">Balík nad 2 kg (Kč)</label>
                 <input type="number" id="rateOver2" step="0.5" class="w-full px-3 py-1.5 bg-white border rounded text-xs font-bold">
               </div>
@@ -875,8 +883,8 @@
       return ROUTES_CONFIG.filter(r => r.active).map(r => r.route);
     }
 
-    const DEFAULT_COURIER_PRICE = { stop: 15.0, over2: 1.0, ps: 3.0, echo: 2.0, p30: 2.0, p50: 1.5, p150: 1.0, p200: 1.0, pOver: 1.0 };
-    const DEFAULT_INVOICE_PRICE = { stop: 38.0, under2: 8.0, over2: 12.0, ps: 14.0, echo: 5.0, p30: 3.5, p50: 2.8, p150: 2.2, p200: 2.0, pOver: 1.8 };
+    const DEFAULT_COURIER_PRICE = { stop: 15.0, under2: 0, over2: 2.0, ps: 3.0, echo: 2.0, p30: 2.0, p50: 1.5, p150: 1.5, p200: 1.0, pOver: 1.0 };
+    const DEFAULT_INVOICE_PRICE = { stop: 26.0, under2: 2.0, over2: 10.0, ps: 10.0, echo: 8.0, p30: 10.0, p50: 8.0, p150: 6.0, p200: 4.0, pOver: 3.0 };
 
 
     let PRICING_COURIER = {};
@@ -1373,7 +1381,7 @@
     function calcCourierShiftPay(shift, route) {
       const p = PRICING_COURIER[route] || DEFAULT_COURIER_PRICE;
       return ((shift.stops || 0) * (p.stop ?? 15.0)) + 
-             ((shift.under2 || 0) * (p.under2 ?? 1.0)) + 
+             ((shift.under2 || 0) * (p.under2 ?? 0)) + 
              ((shift.over2 || 0) * (p.over2 ?? 1.0)) + 
              ((shift.ps || 0) * (p.ps ?? 3.0)) + 
              ((shift.echo || 0) * (p.echo ?? 2.0)) +
@@ -1836,7 +1844,7 @@
 
       const p = PRICING_COURIER[currentUser.route] || DEFAULT_COURIER_PRICE;
       const baseEarned = (settle.stops * (p.stop ?? 15.0)) + 
-                         (settle.under2 * (p.under2 ?? 1.0)) + 
+                         (settle.under2 * (p.under2 ?? 0)) + 
                          (settle.over2 * (p.over2 ?? 1.0)) + 
                          (settle.ps * (p.ps ?? 3.0)) + 
                          (settle.echo * (p.echo ?? 2.0)) +
@@ -1944,7 +1952,7 @@
               routeData.p30 += s.p30 || 0; routeData.p50 += s.p50 || 0; routeData.p150 += s.p150 || 0; routeData.p200 += s.p200 || 0; routeData.pOver += s.pOver || 0;
               const p = PRICING_COURIER[route] || DEFAULT_COURIER_PRICE;
               const base = (s.stops * (p.stop ?? 15.0)) + 
-                           (s.under2 * (p.under2 ?? 1.0)) + 
+                           (s.under2 * (p.under2 ?? 0)) + 
                            (s.over2 * (p.over2 ?? 1.0)) + 
                            (s.ps * (p.ps ?? 3.0)) + 
                            (s.echo * (p.echo ?? 2.0)) +
@@ -1976,7 +1984,7 @@
             routeData = { ...s };
             const p = PRICING_COURIER[route] || DEFAULT_COURIER_PRICE;
             const base = (s.stops * (p.stop ?? 15.0)) + 
-                         (s.under2 * (p.under2 ?? 1.0)) + 
+                         (s.under2 * (p.under2 ?? 0)) + 
                          (s.over2 * (p.over2 ?? 1.0)) + 
                          (s.ps * (p.ps ?? 3.0)) + 
                          (s.echo * (p.echo ?? 2.0)) +
@@ -2196,6 +2204,7 @@
 
       if (s) {
         document.getElementById("depoStops").value = s.stops || 0;
+        document.getElementById("depoUnder2").value = s.under2 || 0;
         document.getElementById("depoOver2").value = s.over2 || 0;
         document.getElementById("depoPS").value = s.ps || 0;
         document.getElementById("depoEcho").value = s.echo || 0;
@@ -2216,13 +2225,14 @@
           const d = new Date(sh.date);
           return d.getFullYear() == year && (d.getMonth() + 1) == month && sh.route === route;
         });
-        let sumStops=0, sumOver=0, sumPS=0, sumEcho=0, sum30=0, sum50=0, sum150=0, sum200=0, sumOverP=0;
+        let sumStops=0, sumUnder=0, sumOver=0, sumPS=0, sumEcho=0, sum30=0, sum50=0, sum150=0, sum200=0, sumOverP=0;
         mShifts.forEach(sh => {
-          sumStops += sh.stops || 0; sumOver += sh.over2 || 0; sumPS += sh.ps || 0; sumEcho += sh.echo || 0;
+          sumStops += sh.stops || 0; sumUnder += sh.under2 || 0; sumOver += sh.over2 || 0; sumPS += sh.ps || 0; sumEcho += sh.echo || 0;
           sum30 += sh.p30 || 0; sum50 += sh.p50 || 0; sum150 += sh.p150 || 0; sum200 += sh.p200 || 0; sumOverP += sh.pOver || 0;
         });
 
         document.getElementById("depoStops").value = sumStops;
+        document.getElementById("depoUnder2").value = sumUnder;
         document.getElementById("depoOver2").value = sumOver;
         document.getElementById("depoPS").value = sumPS;
         document.getElementById("depoEcho").value = sumEcho;
@@ -2255,6 +2265,7 @@
       const p = PRICING_COURIER[route] || DEFAULT_COURIER_PRICE;
 
       const stops = Number(document.getElementById("depoStops").value) || 0;
+      const under2 = Number(document.getElementById("depoUnder2").value) || 0;
       const over2 = Number(document.getElementById("depoOver2").value) || 0;
       const ps = Number(document.getElementById("depoPS").value) || 0;
       const echo = Number(document.getElementById("depoEcho").value) || 0;
@@ -2265,6 +2276,7 @@
       const pOver = Number(document.getElementById("depoPOver").value) || 0;
 
       const base = (stops * (p.stop ?? 15.0)) + 
+                   (under2 * (p.under2 ?? 0)) + 
                    (over2 * (p.over2 ?? 1.0)) + 
                    (ps * (p.ps ?? 3.0)) + 
                    (echo * (p.echo ?? 2.0)) +
@@ -2304,7 +2316,7 @@
 
       const sData = {
         stops: Number(document.getElementById("depoStops").value) || 0,
-        under2: 0,
+        under2: Number(document.getElementById("depoUnder2").value) || 0,
         over2: Number(document.getElementById("depoOver2").value) || 0,
         ps: Number(document.getElementById("depoPS").value) || 0,
         echo: Number(document.getElementById("depoEcho").value) || 0,
@@ -2346,6 +2358,7 @@
       const inv = PRICING_INVOICE[route] || DEFAULT_INVOICE_PRICE;
 
       document.getElementById("rateStop").value = c.stop;
+      document.getElementById("rateUnder2").value = c.under2 ?? 0;
       document.getElementById("rateOver2").value = c.over2;
       document.getElementById("ratePS").value = c.ps;
       document.getElementById("rateEcho").value = c.echo;
@@ -2369,29 +2382,34 @@
 
     async function savePricingForRoute() {
       const route = document.getElementById("pricingRouteSelect").value;
+      const num = (id, def) => {
+        const v = document.getElementById(id).value;
+        return (v === "" || isNaN(Number(v))) ? def : Number(v);
+      };
       PRICING_COURIER[route] = {
-        stop: Number(document.getElementById("rateStop").value) || 15.0,
-        over2: Number(document.getElementById("rateOver2").value) || 1.0,
-        ps: Number(document.getElementById("ratePS").value) || 3.0,
-        echo: Number(document.getElementById("rateEcho").value) || 2.0,
-        p30: Number(document.getElementById("rateP30").value) || 2.0,
-        p50: Number(document.getElementById("rateP50").value) || 1.5,
-        p150: Number(document.getElementById("rateP150").value) || 1.0,
-        p200: Number(document.getElementById("rateP200").value) || 1.0,
-        pOver: Number(document.getElementById("ratePOver").value) || 1.0
+        stop: num("rateStop", 15.0),
+        under2: num("rateUnder2", 0),
+        over2: num("rateOver2", 1.0),
+        ps: num("ratePS", 3.0),
+        echo: num("rateEcho", 2.0),
+        p30: num("rateP30", 2.0),
+        p50: num("rateP50", 1.5),
+        p150: num("rateP150", 1.0),
+        p200: num("rateP200", 1.0),
+        pOver: num("ratePOver", 1.0)
       };
 
       PRICING_INVOICE[route] = {
-        stop: Number(document.getElementById("invStop").value) || 38.0,
-        under2: Number(document.getElementById("invUnder2").value) || 8.0,
-        over2: Number(document.getElementById("invOver2").value) || 12.0,
-        ps: Number(document.getElementById("invPS").value) || 14.0,
-        echo: Number(document.getElementById("invEcho").value) || 5.0,
-        p30: Number(document.getElementById("invP30").value) || 3.5,
-        p50: Number(document.getElementById("invP50").value) || 2.8,
-        p150: Number(document.getElementById("invP150").value) || 2.2,
-        p200: Number(document.getElementById("invP200").value) || 2.0,
-        pOver: Number(document.getElementById("invPOver").value) || 1.8
+        stop: num("invStop", 38.0),
+        under2: num("invUnder2", 8.0),
+        over2: num("invOver2", 12.0),
+        ps: num("invPS", 14.0),
+        echo: num("invEcho", 5.0),
+        p30: num("invP30", 3.5),
+        p50: num("invP50", 2.8),
+        p150: num("invP150", 2.2),
+        p200: num("invP200", 2.0),
+        pOver: num("invPOver", 1.8)
       };
 
       try {
